@@ -1,0 +1,38 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-mono: ui-monospace, "Cascadia Code", "Source Code Pro", Menlo, monospace;
+  --font-display: "Arial Narrow", "Impact", ui-sans-serif, system-ui, sans-serif;
+}
+
+body {
+  background-color: #030a04;
+  color: #f5f0e8;
+  font-family: var(--font-mono);
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background-image: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 40px,
+    rgba(20, 61, 31, 0.08) 40px,
+    rgba(20, 61, 31, 0.08) 41px
+  );
+  z-index: 0;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+.card {
+  @apply bg-surface border border-border rounded-lg p-4;
+  border-left: 3px solid #e8b820;
+}
