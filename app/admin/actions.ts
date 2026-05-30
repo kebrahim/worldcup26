@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+import { syncScores } from "@/lib/scores";
 
 export async function triggerScoreSync() {
   const supabase = await createClient();
@@ -14,16 +15,7 @@ export async function triggerScoreSync() {
     .eq("id", user.id)
     .single();
 
-  if (!profile?.is_commissioner) {
-    return { error: "Forbidden" };
-  }
+  if (!profile?.is_commissioner) return { error: "Forbidden" };
 
-  const res = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/scores/sync`, {
-    method: "POST",
-    headers: { "x-sync-secret": process.env.SYNC_SECRET ?? "" },
-  });
-
-  const data = await res.json();
-  if (!res.ok) return { error: data.error ?? "Sync failed" };
-  return { success: true, matchesUpserted: data.matchesUpserted };
+  return await syncScores();
 }
