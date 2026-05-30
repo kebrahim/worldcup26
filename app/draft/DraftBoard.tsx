@@ -9,7 +9,7 @@ const GROUPS = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L"];
 type Team = { id: number; name: string; code: string; group_name: string; flag_emoji: string };
 type Pick = { pick_number: number; team_id: number; user_id: string; profiles: { display_name: string }; teams: { name: string; code: string; flag_emoji: string } };
 type Player = { id: string; display_name: string };
-type Session = { id: string; stage: string; status: string; current_pick_index: number; snake_order: string[]; total_rounds: number };
+type Session = { id: string; stage: string; status: string; current_pick_index: number; current_round: number; snake_order: string[]; total_rounds: number };
 
 interface Props {
   session: Session | null;
