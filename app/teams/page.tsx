@@ -118,7 +118,7 @@ export default async function TeamsPage() {
           </div>
         ) : (
           <div className="card mb-8">
-            <p className="text-chalk/30 text-sm">No group stage picks yet — draft hasn't started.</p>
+            <p className="text-chalk/30 text-sm">No group stage picks yet — draft has not started.</p>
           </div>
         )}
 
@@ -143,7 +143,7 @@ export default async function TeamsPage() {
           </div>
         ) : (
           <div className="card">
-            <p className="text-chalk/30 text-sm">No knockout picks yet — knockout draft hasn't started.</p>
+            <p className="text-chalk/30 text-sm">No knockout picks yet — knockout draft has not started.</p>
           </div>
         )}
       </div>
