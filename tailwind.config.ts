@@ -9,12 +9,14 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        bg: "#030a04",
-        surface: "#06120a",
-        border: "#143d1f",
+        bg: "#071a0a",
+        surface: "#0b2410",
+        border: "#1a4a25",
+        pitch: "#1e5229",
         gold: "#e8b820",
         "gold-light": "#f5c842",
         chalk: "#f5f0e8",
+        "line-white": "rgba(255,255,255,0.5)",
       },
       fontFamily: {
         mono: ["var(--font-mono)", "monospace"],

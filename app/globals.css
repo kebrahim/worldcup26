@@ -8,23 +8,39 @@
 }
 
 body {
-  background-color: #030a04;
+  background-color: #071a0a;
   color: #f5f0e8;
   font-family: var(--font-mono);
 }
 
+/* Pitch stripes — alternating grass bands */
 body::before {
   content: "";
   position: fixed;
   inset: 0;
   pointer-events: none;
   background-image: repeating-linear-gradient(
-    0deg,
-    transparent,
-    transparent 40px,
-    rgba(20, 61, 31, 0.08) 40px,
-    rgba(20, 61, 31, 0.08) 41px
+    180deg,
+    rgba(255, 255, 255, 0.015) 0px,
+    rgba(255, 255, 255, 0.015) 60px,
+    transparent 60px,
+    transparent 120px
   );
+  z-index: 0;
+}
+
+/* Faint center circle decorative element */
+body::after {
+  content: "";
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 340px;
+  height: 340px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  pointer-events: none;
   z-index: 0;
 }
 
@@ -33,6 +49,13 @@ body::before {
 }
 
 .card {
-  @apply bg-surface border border-border rounded-lg p-4;
-  border-left: 3px solid #e8b820;
+  @apply bg-surface border border-pitch rounded-lg p-4;
+  border-left: 3px solid rgba(255, 255, 255, 0.5);
+  position: relative;
+  z-index: 1;
+}
+
+main, header, nav, section, aside, footer {
+  position: relative;
+  z-index: 1;
 }
