@@ -1,16 +1,28 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 
+function mapStage(stage: string): string {
+  const map: Record<string, string> = {
+    "GROUP_STAGE": "group",
+    "LAST_32": "round_of_32",
+    "LAST_16": "round_of_16",
+    "QUARTER_FINALS": "quarterfinal",
+    "SEMI_FINALS": "semifinal",
+    "FINAL": "final",
+  };
+  return map[stage] ?? "group";
+}
+
 export async function syncScores(): Promise<{ error?: string; matchesUpserted?: number }> {
   const apiKey = process.env.WC2026_API_KEY;
   if (!apiKey) return { error: "WC2026_API_KEY not configured" };
 
   const admin = createAdminClient();
 
-  const res = await fetch("https://api.wc2026api.com/matches", {
-    headers: { Authorization: `Bearer ${apiKey}` },
+  const res = await fetch("https://api.football-data.org/v4/competitions/WC/matches", {
+    headers: { "X-Auth-Token": apiKey },
   });
 
-  if (!res.ok) return { error: "Failed to fetch matches from WC2026 API" };
+  if (!res.ok) return { error: `Failed to fetch matches: ${res.status}` };
 
   const { matches } = await res.json();
 
@@ -21,23 +33,41 @@ export async function syncScores(): Promise<{ error?: string; matchesUpserted?: 
 
   let upserted = 0;
   for (const match of matches) {
-    const homeId = teamCodeMap[match.home_team_code];
-    const awayId = teamCodeMap[match.away_team_code];
+    const homeCode = match.homeTeam?.tla;
+    const awayCode = match.awayTeam?.tla;
+    const homeId = teamCodeMap[homeCode];
+    const awayId = teamCodeMap[awayCode];
     if (!homeId || !awayId) continue;
+
+    const status = match.status === "FINISHED" ? "completed"
+      : match.status === "IN_PLAY" || match.status === "PAUSED" ? "live"
+      : "scheduled";
+
+    const stage = mapStage(match.stage);
+    const groupName = match.group ? match.group.replace("GROUP_", "") : null;
+
+    const homeScore = match.score?.fullTime?.home ?? null;
+    const awayScore = match.score?.fullTime?.away ?? null;
+    const homePen = match.score?.penalties?.home ?? null;
+    const awayPen = match.score?.penalties?.away ?? null;
+
+    let winnerId: number | null = null;
+    if (match.score?.winner === "HOME_TEAM") winnerId = homeId;
+    else if (match.score?.winner === "AWAY_TEAM") winnerId = awayId;
 
     await admin.from("matches").upsert({
       id: match.id,
-      stage: match.stage,
-      group_name: match.group ?? null,
+      stage,
+      group_name: groupName,
       home_team_id: homeId,
       away_team_id: awayId,
-      home_score: match.home_score ?? null,
-      away_score: match.away_score ?? null,
-      home_score_pen: match.home_score_pen ?? null,
-      away_score_pen: match.away_score_pen ?? null,
-      winner_team_id: match.winner_code ? teamCodeMap[match.winner_code] : null,
-      kickoff_utc: match.kickoff_utc,
-      status: match.status,
+      home_score: homeScore,
+      away_score: awayScore,
+      home_score_pen: homePen,
+      away_score_pen: awayPen,
+      winner_team_id: winnerId,
+      kickoff_utc: match.utcDate,
+      status,
       venue: match.venue ?? null,
     });
     upserted++;
