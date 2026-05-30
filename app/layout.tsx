@@ -4,7 +4,6 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "World Cup 2026 Contest",
   description: "Fantasy contest for the 2026 FIFA World Cup",
-  icons: { icon: "/favicon.svg" },
 };
 
 export default function RootLayout({
