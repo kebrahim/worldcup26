@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { triggerScoreSync } from "./actions";
 
 type Session = { id: string; stage: string; status: string; current_pick_index: number; total_rounds: number; snake_order: string[]; created_at: string; completed_at: string | null };
 type Pick = { pick_number: number; profiles: { display_name: string }; teams: { name: string; code: string; flag_emoji: string } };
@@ -45,13 +46,9 @@ export default function AdminPanel({ sessions, recentPicks, players }: Props) {
     setError(null);
     setMessage(null);
     setLoading("sync");
-    const res = await fetch("/api/scores/sync", {
-      method: "POST",
-      headers: { "x-sync-secret": process.env.NEXT_PUBLIC_SYNC_SECRET ?? "" },
-    });
-    const data = await res.json();
-    if (!res.ok) {
-      setError(data.error ?? "Sync failed");
+    const result = await triggerScoreSync();
+    if ("error" in result) {
+      setError(result.error ?? "Sync failed");
     } else {
       setMessage("Score sync completed.");
       router.refresh();
