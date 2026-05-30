@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <circle cx="50" cy="50" r="48" fill="#f5f0e8" stroke="#143d1f" stroke-width="3"/>
+  <!-- Center pentagon -->
+  <polygon points="50,28 63,38 58,53 42,53 37,38" fill="#030a04"/>
+  <!-- Top left pentagon -->
+  <polygon points="21,24 34,24 37,38 26,46 15,38" fill="#030a04"/>
+  <!-- Top right pentagon -->
+  <polygon points="79,24 85,38 74,46 63,38 66,24" fill="#030a04"/>
+  <!-- Bottom left pentagon -->
+  <polygon points="15,62 26,54 42,53 42,68 29,76" fill="#030a04"/>
+  <!-- Bottom right pentagon -->
+  <polygon points="85,62 71,76 58,68 58,53 74,54" fill="#030a04"/>
+  <!-- Bottom pentagon -->
+  <polygon points="42,68 58,68 63,82 50,90 37,82" fill="#030a04"/>
+</svg>
