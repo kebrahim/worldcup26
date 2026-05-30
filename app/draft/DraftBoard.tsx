@@ -26,12 +26,12 @@ export default function DraftBoard({ session, teams, picks, players, currentUser
   const [groupFilter, setGroupFilter] = useState<string>("ALL");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [confirmTeam, setConfirmTeam] = useState<Team | null>(null);
   const router = useRouter();
   const supabase = createClient();
 
   useEffect(() => {
     if (!session) return;
-
     const channel = supabase
       .channel("draft-picks")
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "draft_picks", filter: `session_id=eq.${session.id}` },
@@ -41,17 +41,18 @@ export default function DraftBoard({ session, teams, picks, players, currentUser
         () => { router.refresh(); }
       )
       .subscribe();
-
     return () => { supabase.removeChannel(channel); };
   }, [session, supabase, router]);
 
-  async function handlePick(teamId: number) {
+  async function confirmPick() {
+    if (!confirmTeam) return;
     setError(null);
     setLoading(true);
+    setConfirmTeam(null);
     const res = await fetch("/api/draft/pick", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ teamId }),
+      body: JSON.stringify({ teamId: confirmTeam.id }),
     });
     const data = await res.json();
     if (!res.ok) {
@@ -64,10 +65,7 @@ export default function DraftBoard({ session, teams, picks, players, currentUser
 
   const playerMap = Object.fromEntries(players.map((p) => [p.id, p.display_name]));
   const isMyTurn = myUserId === currentUserId;
-
-  const filteredTeams = groupFilter === "ALL"
-    ? teams
-    : teams.filter((t) => t.group_name === groupFilter);
+  const filteredTeams = groupFilter === "ALL" ? teams : teams.filter((t) => t.group_name === groupFilter);
 
   if (!session) {
     return (
@@ -101,7 +99,6 @@ export default function DraftBoard({ session, teams, picks, players, currentUser
               Pick {picksMade + 1} of {totalPicks} · Round {session.current_round} of {session.total_rounds}
             </p>
           </div>
-
           <div className="text-right">
             {isMyTurn ? (
               <div className="text-gold font-bold animate-pulse">YOUR TURN TO PICK</div>
@@ -149,7 +146,7 @@ export default function DraftBoard({ session, teams, picks, players, currentUser
                   <button
                     key={team.id}
                     disabled={!canPick}
-                    onClick={() => canPick && handlePick(team.id)}
+                    onClick={() => canPick && setConfirmTeam(team)}
                     className={`p-2 rounded border text-left transition-colors ${
                       isPicked
                         ? "border-border bg-surface opacity-40 cursor-not-allowed"
@@ -158,9 +155,9 @@ export default function DraftBoard({ session, teams, picks, players, currentUser
                         : "border-border cursor-not-allowed"
                     }`}
                   >
-                    <div className="text-lg">{team.flag_emoji}</div>
-                    <div className={`text-xs font-bold mt-1 ${isPicked ? "text-chalk/30" : "text-chalk"}`}>{team.code}</div>
-                    <div className={`text-xs ${isPicked ? "text-chalk/20" : "text-chalk/50"}`}>Grp {team.group_name}</div>
+                    <div className="text-xl">{team.flag_emoji}</div>
+                    <div className={`text-sm font-bold mt-1 leading-tight ${isPicked ? "text-chalk/30" : "text-chalk"}`}>{team.name}</div>
+                    <div className={`text-xs mt-0.5 ${isPicked ? "text-chalk/20" : "text-chalk/50"}`}>Grp {team.group_name}</div>
                   </button>
                 );
               })}
@@ -188,6 +185,32 @@ export default function DraftBoard({ session, teams, picks, players, currentUser
           </div>
         </div>
       </div>
+
+      {/* Confirmation modal */}
+      {confirmTeam && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+          <div className="bg-surface border border-border rounded-lg p-6 max-w-sm w-full" style={{ borderLeftColor: "#e8b820", borderLeftWidth: 3 }}>
+            <div className="text-4xl mb-3">{confirmTeam.flag_emoji}</div>
+            <h2 className="text-xl font-bold text-chalk mb-1">{confirmTeam.name}</h2>
+            <p className="text-chalk/40 text-sm mb-6">Group {confirmTeam.group_name} · Are you sure you want to select this team?</p>
+            <div className="flex gap-3">
+              <button
+                onClick={confirmPick}
+                disabled={loading}
+                className="flex-1 bg-gold text-bg font-bold py-2 rounded text-sm uppercase tracking-widest hover:bg-gold-light transition-colors disabled:opacity-50"
+              >
+                {loading ? "Picking..." : "Confirm Pick"}
+              </button>
+              <button
+                onClick={() => setConfirmTeam(null)}
+                className="flex-1 border border-border text-chalk/60 hover:text-chalk py-2 rounded text-sm uppercase tracking-widest transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
