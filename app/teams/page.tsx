@@ -12,6 +12,13 @@ const CONTESTS = [
   { key: "knockout_goals", label: "Knockout Goals", higher: true, unit: "goals" },
 ];
 
+type TeamShape = { id: number; name: string; code: string; group_name: string; flag_emoji: string };
+
+function extractTeam(teams: unknown): TeamShape {
+  const t = Array.isArray(teams) ? teams[0] : teams;
+  return t as TeamShape;
+}
+
 export default async function TeamsPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -98,7 +105,7 @@ export default async function TeamsPage() {
         {groupPicks && groupPicks.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 mb-8">
             {groupPicks.map((pick) => {
-              const team = pick.teams as { id: number; name: string; code: string; group_name: string; flag_emoji: string };
+              const team = extractTeam(pick.teams);
               const stats = teamStats[pick.team_id] ?? { gf: 0, ga: 0 };
               return (
                 <div key={pick.team_id} className="card">
@@ -128,7 +135,7 @@ export default async function TeamsPage() {
         {knockoutPicks && knockoutPicks.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
             {knockoutPicks.map((pick) => {
-              const team = pick.teams as { id: number; name: string; code: string; group_name: string; flag_emoji: string };
+              const team = extractTeam(pick.teams);
               return (
                 <div key={pick.team_id} className="card">
                   <div className="flex items-center justify-between mb-2">
