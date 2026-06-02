@@ -111,7 +111,7 @@ join profiles p on dp.user_id = p.id
 left join matches m on (m.home_team_id = t.id or m.away_team_id = t.id) and m.stage = 'group'
 group by dp.user_id, p.display_name, t.id, t.name, t.code, t.group_name, t.flag_emoji;
 
-create view overall_leaderboard as
+create view overall_leaderboard with (security_invoker = true) as
 select
   p.id as user_id,
   p.display_name,
