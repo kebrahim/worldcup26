@@ -89,7 +89,7 @@ create table contest_scores (
   unique(user_id, contest)
 );
 
-create view group_stage_rosters as
+create view group_stage_rosters with (security_invoker = true) as
 select
   dp.user_id,
   p.display_name,
