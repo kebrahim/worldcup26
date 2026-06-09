@@ -21,22 +21,21 @@ export default function AdminPanel({ sessions, recentPicks, players }: Props) {
   const router = useRouter();
 
   const groupSession = sessions.find((s) => s.stage === "group_stage");
-  const knockoutSession = sessions.find((s) => s.stage === "knockout");
 
-  async function startDraft(stage: string) {
+  async function startDraft() {
     setError(null);
     setMessage(null);
-    setLoading(stage);
+    setLoading("group_stage");
     const res = await fetch("/api/draft/start", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ stage }),
+      body: JSON.stringify({ stage: "group_stage" }),
     });
     const data = await res.json();
     if (!res.ok) {
       setError(data.error ?? "Failed to start draft");
     } else {
-      setMessage(`${stage === "group_stage" ? "Group stage" : "Knockout"} draft started!`);
+      setMessage("Draft started!");
       router.refresh();
     }
     setLoading(null);
@@ -79,58 +78,30 @@ export default function AdminPanel({ sessions, recentPicks, players }: Props) {
         {message && <p className="text-green-400 text-sm mb-4">{message}</p>}
         {error && <p className="text-red-400 text-sm mb-4">{error}</p>}
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
-          <div className="card">
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-chalk font-bold">Group Stage Draft</h2>
-              {groupSession ? statusBadge(groupSession.status) : statusBadge("pending")}
-            </div>
-            {groupSession ? (
-              <div className="text-chalk/50 text-sm space-y-1">
-                <div>Pick {groupSession.current_pick_index} / 45</div>
-                <div>Round {Math.ceil((groupSession.current_pick_index + 1) / groupSession.snake_order.length)} of {groupSession.total_rounds}</div>
-                <div>Started {new Date(groupSession.created_at).toLocaleDateString()}</div>
-                {groupSession.completed_at && <div>Completed {new Date(groupSession.completed_at).toLocaleDateString()}</div>}
-              </div>
-            ) : (
-              <p className="text-chalk/40 text-sm mb-3">Not started yet. Starts a snake draft for all {players.length} players.</p>
-            )}
-            {!groupSession && (
-              <button
-                onClick={() => startDraft("group_stage")}
-                disabled={loading !== null}
-                className="mt-3 w-full bg-gold text-bg font-bold py-2 rounded text-sm uppercase tracking-widest hover:bg-gold-light transition-colors disabled:opacity-50"
-              >
-                {loading === "group_stage" ? "Starting..." : "Start Group Stage Draft"}
-              </button>
-            )}
+        <div className="card mb-8">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-chalk font-bold">Draft</h2>
+            {groupSession ? statusBadge(groupSession.status) : statusBadge("pending")}
           </div>
-
-          <div className="card">
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-chalk font-bold">Knockout Draft</h2>
-              {knockoutSession ? statusBadge(knockoutSession.status) : statusBadge("pending")}
+          {groupSession ? (
+            <div className="text-chalk/50 text-sm space-y-1">
+              <div>Pick {groupSession.current_pick_index} / 45</div>
+              <div>Round {Math.ceil((groupSession.current_pick_index + 1) / groupSession.snake_order.length)} of {groupSession.total_rounds}</div>
+              <div>Started {new Date(groupSession.created_at).toLocaleDateString()}</div>
+              {groupSession.completed_at && <div>Completed {new Date(groupSession.completed_at).toLocaleDateString()}</div>}
             </div>
-            {knockoutSession ? (
-              <div className="text-chalk/50 text-sm space-y-1">
-                <div>Pick {knockoutSession.current_pick_index} / 32</div>
-                <div>Round {Math.ceil((knockoutSession.current_pick_index + 1) / knockoutSession.snake_order.length)} of {knockoutSession.total_rounds}</div>
-                <div>Started {new Date(knockoutSession.created_at).toLocaleDateString()}</div>
-                {knockoutSession.completed_at && <div>Completed {new Date(knockoutSession.completed_at).toLocaleDateString()}</div>}
-              </div>
-            ) : (
-              <p className="text-chalk/40 text-sm mb-3">Not started yet. Run after group stage ends.</p>
-            )}
-            {!knockoutSession && (
-              <button
-                onClick={() => startDraft("knockout")}
-                disabled={loading !== null}
-                className="mt-3 w-full bg-gold text-bg font-bold py-2 rounded text-sm uppercase tracking-widest hover:bg-gold-light transition-colors disabled:opacity-50"
-              >
-                {loading === "knockout" ? "Starting..." : "Start Knockout Draft"}
-              </button>
-            )}
-          </div>
+          ) : (
+            <p className="text-chalk/40 text-sm mb-3">Not started yet. Starts a snake draft for all {players.length} players.</p>
+          )}
+          {!groupSession && (
+            <button
+              onClick={startDraft}
+              disabled={loading !== null}
+              className="mt-3 w-full bg-gold text-bg font-bold py-2 rounded text-sm uppercase tracking-widest hover:bg-gold-light transition-colors disabled:opacity-50"
+            >
+              {loading === "group_stage" ? "Starting..." : "Start Draft"}
+            </button>
+          )}
         </div>
 
         <div className="card mb-8">

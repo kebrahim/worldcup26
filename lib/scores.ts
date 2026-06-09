@@ -81,15 +81,10 @@ async function recalculateContestScores(admin: ReturnType<typeof createAdminClie
   const { data: players } = await admin.from("profiles").select("id");
   if (!players) return;
 
-  const { data: groupPicks } = await admin
+  const { data: picks } = await admin
     .from("draft_picks")
     .select("user_id, team_id, draft_sessions!inner(stage)")
     .eq("draft_sessions.stage", "group_stage");
-
-  const { data: knockoutPicks } = await admin
-    .from("draft_picks")
-    .select("user_id, team_id, draft_sessions!inner(stage)")
-    .eq("draft_sessions.stage", "knockout");
 
   const { data: groupMatches } = await admin
     .from("matches")
@@ -118,7 +113,7 @@ async function recalculateContestScores(admin: ReturnType<typeof createAdminClie
     };
   }
 
-  for (const pick of groupPicks ?? []) {
+  for (const pick of picks ?? []) {
     const uid = pick.user_id;
     if (!scores[uid]) continue;
     for (const m of groupMatches ?? []) {
@@ -134,11 +129,7 @@ async function recalculateContestScores(admin: ReturnType<typeof createAdminClie
       (m) => m.home_team_id === pick.team_id || m.away_team_id === pick.team_id
     );
     if (advanced) scores[uid].group_advancements += 1;
-  }
 
-  for (const pick of knockoutPicks ?? []) {
-    const uid = pick.user_id;
-    if (!scores[uid]) continue;
     for (const m of knockoutMatches ?? []) {
       const isHome = m.home_team_id === pick.team_id;
       const isAway = m.away_team_id === pick.team_id;

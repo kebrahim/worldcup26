@@ -81,7 +81,7 @@ export default function DraftBoard({ session, teams, picks, players, currentUser
     );
   }
 
-  const totalPicks = session.stage === "group_stage" ? 45 : 32;
+  const totalPicks = 45;
   const picksMade = picks.length;
   const progressPct = Math.round((picksMade / totalPicks) * 100);
 
@@ -93,7 +93,7 @@ export default function DraftBoard({ session, teams, picks, players, currentUser
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
           <div>
             <h1 className="text-3xl font-bold text-gold font-display uppercase tracking-wide">
-              {session.stage === "group_stage" ? "Group Stage" : "Knockout"} Draft
+              World Cup Draft
             </h1>
             <p className="text-chalk/50 text-sm mt-1">
               Pick {picksMade + 1} of {totalPicks} · Round {session.current_round} of {session.total_rounds}
@@ -186,7 +186,6 @@ export default function DraftBoard({ session, teams, picks, players, currentUser
         </div>
       </div>
 
-      {/* Confirmation modal */}
       {confirmTeam && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
           <div className="bg-surface border border-border rounded-lg p-6 max-w-sm w-full" style={{ borderLeftColor: "#e8b820", borderLeftWidth: 3 }}>

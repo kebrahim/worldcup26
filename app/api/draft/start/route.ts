@@ -20,7 +20,7 @@ export async function POST(request: Request) {
   }
 
   const { stage } = await request.json();
-  if (!["group_stage", "knockout"].includes(stage)) {
+  if (stage !== "group_stage") {
     return NextResponse.json({ error: "Invalid stage" }, { status: 400 });
   }
 
@@ -43,7 +43,7 @@ export async function POST(request: Request) {
   }
 
   const snakeOrder = shuffleArray(players.map((p) => p.id));
-  const totalRounds = stage === "group_stage" ? 9 : 7;
+  const totalRounds = 9;
 
   const { data: session, error } = await admin
     .from("draft_sessions")
