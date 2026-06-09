@@ -11,8 +11,6 @@ const CONTESTS = [
   { key: "knockout_goals", label: "Knockout Goals", desc: "Total goals scored in knockout stage", higher: true },
 ];
 
-const CONTEST_POINTS = [5, 4, 3, 2, 1];
-
 export default async function LeaderboardPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -35,13 +33,13 @@ export default async function LeaderboardPage() {
     .map((p) => ({ ...p, total: totals[p.id] ?? 0 }))
     .sort((a, b) => b.total - a.total);
 
-  const byContest: Record<string, Array<{ user_id: string; score: number; rank: number; contest_points: number }>> = {};
+  const byContest: Record<string, Array<{ user_id: string; score: number; rank: number | null; contest_points: number }>> = {};
   for (const cs of contestScores ?? []) {
     if (!byContest[cs.contest]) byContest[cs.contest] = [];
     byContest[cs.contest].push(cs);
   }
   for (const key of Object.keys(byContest)) {
-    byContest[key].sort((a, b) => a.rank - b.rank);
+    byContest[key].sort((a, b) => (a.rank ?? 999) - (b.rank ?? 999));
   }
 
   const rankColors = ["text-gold", "text-chalk/70", "text-amber-600", "text-chalk/40", "text-chalk/30"];
@@ -76,6 +74,7 @@ export default async function LeaderboardPage() {
         <div className="flex flex-col gap-4">
           {CONTESTS.map((contest) => {
             const rows = byContest[contest.key] ?? [];
+            const allZero = rows.every((r) => r.contest_points === 0);
             return (
               <details key={contest.key} className="card group">
                 <summary className="cursor-pointer flex items-center justify-between list-none">
@@ -88,6 +87,8 @@ export default async function LeaderboardPage() {
                 <div className="mt-4 flex flex-col gap-2">
                   {rows.length === 0 ? (
                     <p className="text-chalk/30 text-sm">No data yet.</p>
+                  ) : allZero ? (
+                    <p className="text-chalk/30 text-sm">No points awarded yet — scores are all zero.</p>
                   ) : (
                     rows.map((row, i) => (
                       <div
@@ -95,13 +96,15 @@ export default async function LeaderboardPage() {
                         className={`flex items-center justify-between text-sm ${row.user_id === user?.id ? "text-gold" : "text-chalk"}`}
                       >
                         <div className="flex items-center gap-3">
-                          <span className={`font-mono w-5 ${rankColors[i] ?? "text-chalk/30"}`}>#{row.rank}</span>
+                          <span className={`font-mono w-5 ${rankColors[i] ?? "text-chalk/30"}`}>
+                            {row.rank != null ? `#${row.rank}` : "—"}
+                          </span>
                           <span>{playerMap[row.user_id] ?? "—"}{row.user_id === user?.id && " (you)"}</span>
                         </div>
                         <div className="flex items-center gap-4">
                           <span className="text-chalk/50 font-mono">{row.score}</span>
                           <span className={`font-mono font-bold ${rankColors[i] ?? "text-chalk/30"}`}>
-                            +{CONTEST_POINTS[i] ?? 1}
+                            +{row.contest_points}
                           </span>
                         </div>
                       </div>
