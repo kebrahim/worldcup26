@@ -18,10 +18,11 @@ interface Props {
   players: Player[];
   currentUserId: string | null;
   myUserId: string | null;
+  isCommissioner: boolean;
   pickedTeamIds: number[];
 }
 
-export default function DraftBoard({ session, teams, picks, players, currentUserId, myUserId, pickedTeamIds: initialPickedIds }: Props) {
+export default function DraftBoard({ session, teams, picks, players, currentUserId, myUserId, isCommissioner, pickedTeamIds: initialPickedIds }: Props) {
   const [pickedTeamIds] = useState(new Set(initialPickedIds));
   const [groupFilter, setGroupFilter] = useState<string>("ALL");
   const [loading, setLoading] = useState(false);
@@ -49,10 +50,14 @@ export default function DraftBoard({ session, teams, picks, players, currentUser
     setError(null);
     setLoading(true);
     setConfirmTeam(null);
+    const body: { teamId: number; onBehalfOf?: string } = { teamId: confirmTeam.id };
+    if (isCommissioner && currentUserId && currentUserId !== myUserId) {
+      body.onBehalfOf = currentUserId;
+    }
     const res = await fetch("/api/draft/pick", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ teamId: confirmTeam.id }),
+      body: JSON.stringify(body),
     });
     const data = await res.json();
     if (!res.ok) {
@@ -65,6 +70,8 @@ export default function DraftBoard({ session, teams, picks, players, currentUser
 
   const playerMap = Object.fromEntries(players.map((p) => [p.id, p.display_name]));
   const isMyTurn = myUserId === currentUserId;
+  const canPickForCurrent = isCommissioner && currentUserId !== null;
+  const canInteract = isMyTurn || canPickForCurrent;
   const filteredTeams = groupFilter === "ALL" ? teams : teams.filter((t) => t.group_name === groupFilter);
 
   if (!session) {
@@ -84,6 +91,7 @@ export default function DraftBoard({ session, teams, picks, players, currentUser
   const totalPicks = 45;
   const picksMade = picks.length;
   const progressPct = Math.round((picksMade / totalPicks) * 100);
+  const onClockName = playerMap[currentUserId ?? ""] ?? "—";
 
   return (
     <main className="min-h-screen p-4 md:p-8">
@@ -102,9 +110,13 @@ export default function DraftBoard({ session, teams, picks, players, currentUser
           <div className="text-right">
             {isMyTurn ? (
               <div className="text-gold font-bold animate-pulse">YOUR TURN TO PICK</div>
+            ) : canPickForCurrent ? (
+              <div className="text-amber-400 font-bold text-sm">
+                PICKING FOR: {onClockName.toUpperCase()}
+              </div>
             ) : (
               <div className="text-chalk/60 text-sm">
-                On the clock: <span className="text-chalk font-bold">{playerMap[currentUserId ?? ""] ?? "—"}</span>
+                On the clock: <span className="text-chalk font-bold">{onClockName}</span>
               </div>
             )}
           </div>
@@ -141,7 +153,7 @@ export default function DraftBoard({ session, teams, picks, players, currentUser
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
               {filteredTeams.map((team) => {
                 const isPicked = pickedTeamIds.has(team.id);
-                const canPick = isMyTurn && !isPicked && !loading;
+                const canPick = canInteract && !isPicked && !loading;
                 return (
                   <button
                     key={team.id}
@@ -191,6 +203,9 @@ export default function DraftBoard({ session, teams, picks, players, currentUser
           <div className="bg-surface border border-border rounded-lg p-6 max-w-sm w-full" style={{ borderLeftColor: "#e8b820", borderLeftWidth: 3 }}>
             <div className="text-4xl mb-3">{confirmTeam.flag_emoji}</div>
             <h2 className="text-xl font-bold text-chalk mb-1">{confirmTeam.name}</h2>
+            {canPickForCurrent && !isMyTurn && (
+              <p className="text-amber-400 text-xs mb-2">Picking on behalf of {onClockName}</p>
+            )}
             <p className="text-chalk/40 text-sm mb-6">Group {confirmTeam.group_name} · Are you sure you want to select this team?</p>
             <div className="flex gap-3">
               <button

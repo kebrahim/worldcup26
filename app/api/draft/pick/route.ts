@@ -9,10 +9,24 @@ export async function POST(request: Request) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { teamId } = await request.json();
+  const { teamId, onBehalfOf } = await request.json();
   if (!teamId) return NextResponse.json({ error: "teamId required" }, { status: 400 });
 
   const admin = createAdminClient();
+
+  // Commissioners can pick on behalf of any player
+  let actingAsUserId = user.id;
+  if (onBehalfOf && onBehalfOf !== user.id) {
+    const { data: profile } = await admin
+      .from("profiles")
+      .select("is_commissioner")
+      .eq("id", user.id)
+      .single();
+    if (!profile?.is_commissioner) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+    actingAsUserId = onBehalfOf;
+  }
 
   const { data: session } = await admin
     .from("draft_sessions")
@@ -25,7 +39,7 @@ export async function POST(request: Request) {
   if (!session) return NextResponse.json({ error: "No active draft session" }, { status: 404 });
 
   const currentUserId = getPickOwner(session.current_pick_index, session.snake_order);
-  if (currentUserId !== user.id) {
+  if (currentUserId !== actingAsUserId) {
     return NextResponse.json({ error: "Not your turn" }, { status: 403 });
   }
 
@@ -40,13 +54,13 @@ export async function POST(request: Request) {
 
   const pickNumber = session.current_pick_index + 1;
   const round = Math.ceil(pickNumber / session.snake_order.length);
-  const totalPicks = session.stage === "group_stage" ? 45 : 32;
+  const totalPicks = 45;
   const nextPickIndex = session.current_pick_index + 1;
   const isLastPick = nextPickIndex >= totalPicks;
 
   const { error: pickError } = await admin.from("draft_picks").insert({
     session_id: session.id,
-    user_id: user.id,
+    user_id: actingAsUserId,
     team_id: teamId,
     round,
     pick_number: pickNumber,

@@ -11,12 +11,13 @@ export default async function DraftPage() {
 
   const admin = createAdminClient();
 
-  const [{ data: session }, { data: teams }, { data: picks }, { data: players }] =
+  const [{ data: session }, { data: teams }, { data: picks }, { data: players }, { data: profile }] =
     await Promise.all([
       admin.from("draft_sessions").select("*").eq("status", "active").order("created_at", { ascending: false }).limit(1).maybeSingle(),
       admin.from("teams").select("*").order("group_name").order("name"),
       admin.from("draft_picks").select("*, profiles(display_name), teams(name, code, flag_emoji)").order("pick_number"),
       admin.from("profiles").select("id, display_name"),
+      user ? admin.from("profiles").select("is_commissioner").eq("id", user.id).single() : Promise.resolve({ data: null }),
     ]);
 
   const currentUserId = session
@@ -33,6 +34,7 @@ export default async function DraftPage() {
       players={players ?? []}
       currentUserId={currentUserId}
       myUserId={user?.id ?? null}
+      isCommissioner={profile?.is_commissioner ?? false}
       pickedTeamIds={Array.from(pickedTeamIds)}
     />
   );
