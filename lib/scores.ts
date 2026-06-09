@@ -147,6 +147,7 @@ async function recalculateContestScores(admin: ReturnType<typeof createAdminClie
   const contestPointsMap = [5, 4, 3, 2, 1];
 
   for (const contest of contests) {
+    const allZero = players.every((p) => (scores[p.id]?.[contest] ?? 0) === 0);
     const descending = contest !== "group_defense";
     const ranked = [...players].sort((a, b) => {
       const diff = (scores[b.id]?.[contest] ?? 0) - (scores[a.id]?.[contest] ?? 0);
@@ -158,8 +159,8 @@ async function recalculateContestScores(admin: ReturnType<typeof createAdminClie
         user_id: uid,
         contest,
         score: scores[uid]?.[contest] ?? 0,
-        rank: i + 1,
-        contest_points: contestPointsMap[i] ?? 1,
+        rank: allZero ? null : i + 1,
+        contest_points: allZero ? 0 : (contestPointsMap[i] ?? 1),
       });
     }
   }
