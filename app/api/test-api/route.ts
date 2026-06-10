@@ -14,7 +14,18 @@ export async function GET() {
   const apiKey = process.env.APISPORTS_KEY;
   if (!apiKey) return NextResponse.json({ error: "APISPORTS_KEY not configured" });
 
-  const res = await fetch("https://v3.football.api-sports.io/fixtures?league=1&season=2026", {
+  // First find the correct league ID for WC 2026
+  const leagueRes = await fetch("https://v3.football.api-sports.io/leagues?name=World+Cup&season=2026", {
+    headers: { "x-apisports-key": apiKey },
+  });
+  const leagueData = await leagueRes.json();
+
+  const leagues = leagueData.response ?? [];
+  if (leagues.length === 0) return NextResponse.json({ error: "No WC 2026 league found", leagueData });
+
+  const leagueId = leagues[0]?.league?.id;
+
+  const res = await fetch(`https://v3.football.api-sports.io/fixtures?league=${leagueId}&season=2026`, {
     headers: { "x-apisports-key": apiKey },
   });
 
@@ -33,6 +44,7 @@ export async function GET() {
   }
 
   return NextResponse.json({
+    leagueId,
     totalFixtures: fixtures.length,
     sampleFixture: fixtures[0],
     teams: Object.values(teams).sort((a, b) => a.group.localeCompare(b.group)),
