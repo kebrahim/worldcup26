@@ -22,16 +22,17 @@ export async function GET() {
 
   const { matches } = await res.json();
 
-  const teams: Record<string, { name: string; tla: string }> = {};
+  const teams: Record<string, { name: string; tla: string; group: string }> = {};
   for (const m of matches ?? []) {
+    const group = m.group ? m.group.replace("GROUP_", "") : "";
     const h = m.homeTeam;
     const a = m.awayTeam;
-    if (h?.tla) teams[h.tla] = { name: h.name, tla: h.tla };
-    if (a?.tla) teams[a.tla] = { name: a.name, tla: a.tla };
+    if (h?.tla) teams[h.tla] = { name: h.name, tla: h.tla, group };
+    if (a?.tla) teams[a.tla] = { name: a.name, tla: a.tla, group };
   }
 
   return NextResponse.json({
     totalTeams: Object.keys(teams).length,
-    teams: Object.values(teams).sort((a, b) => a.name.localeCompare(b.name)),
+    teams: Object.values(teams).sort((a, b) => a.group.localeCompare(b.group) || a.name.localeCompare(b.name)),
   });
 }
