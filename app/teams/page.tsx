@@ -29,7 +29,7 @@ export default async function TeamsPage() {
   ]);
 
   // Collect all unique team ids across all players to fetch match stats
-  const allTeamIds = [...new Set((allPicks ?? []).map((p) => p.team_id))];
+  const allTeamIds = Array.from(new Set((allPicks ?? []).map((p) => p.team_id)));
   const { data: groupMatches } = allTeamIds.length > 0
     ? await admin
         .from("matches")
