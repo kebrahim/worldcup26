@@ -166,7 +166,7 @@ async function recalculateContestScores(admin: ReturnType<typeof createAdminClie
         score: scores[uid]?.[contest] ?? 0,
         rank: allZero ? null : i + 1,
         contest_points: allZero ? 0 : (contestPointsMap[i] ?? 1),
-      });
+      }, { onConflict: "user_id,contest" });
     }
   }
 }
