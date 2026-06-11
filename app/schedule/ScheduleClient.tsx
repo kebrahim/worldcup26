@@ -71,13 +71,13 @@ export default function ScheduleClient({ matches, myTeamIds: myTeamIdsArr }: { m
                   style={isMyMatch ? { borderLeftColor: "#f5c842" } : {}}
                 >
                   <div className="flex items-center justify-between gap-2">
-                    <div className={`flex items-center gap-2 flex-1 ${myTeamIds.has(home?.id ?? -1) ? "text-gold" : "text-chalk"}`}>
+                    <a href={home?.id ? `/country/${home.id}` : undefined} className={`flex items-center gap-2 flex-1 ${myTeamIds.has(home?.id ?? -1) ? "text-gold" : "text-chalk"} hover:opacity-80 transition-opacity`}>
                       <span className="text-xl">{home?.flag_emoji}</span>
                       <div>
                         <div className="font-bold text-sm">{home?.code ?? "TBD"}</div>
                         <div className="text-xs text-chalk/40 hidden sm:block">{home?.name}</div>
                       </div>
-                    </div>
+                    </a>
 
                     <div className="text-center min-w-[80px]">
                       {match.status === "completed" ? (
@@ -101,13 +101,13 @@ export default function ScheduleClient({ matches, myTeamIds: myTeamIdsArr }: { m
                       </div>
                     </div>
 
-                    <div className={`flex items-center gap-2 flex-1 justify-end ${myTeamIds.has(away?.id ?? -1) ? "text-gold" : "text-chalk"}`}>
+                    <a href={away?.id ? `/country/${away.id}` : undefined} className={`flex items-center gap-2 flex-1 justify-end ${myTeamIds.has(away?.id ?? -1) ? "text-gold" : "text-chalk"} hover:opacity-80 transition-opacity`}>
                       <div className="text-right">
                         <div className="font-bold text-sm">{away?.code ?? "TBD"}</div>
                         <div className="text-xs text-chalk/40 hidden sm:block">{away?.name}</div>
                       </div>
                       <span className="text-xl">{away?.flag_emoji}</span>
-                    </div>
+                    </a>
                   </div>
 
                   {match.venue && (

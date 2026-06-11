@@ -86,7 +86,7 @@ export default function TeamsClient({
             const team = pick.teams;
             const stats = player.teamStats[pick.team_id] ?? { gf: 0, ga: 0 };
             return (
-              <div key={pick.team_id} className="card">
+              <a key={pick.team_id} href={`/country/${pick.team_id}`} className="card block hover:border-gold/50 transition-colors">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-2xl">{team.flag_emoji}</span>
                   <span className="text-xs text-chalk/40 font-mono">Group {team.group_name}</span>
@@ -97,7 +97,7 @@ export default function TeamsClient({
                   <span className="text-green-400">{stats.gf} GF</span>
                   <span className="text-red-400">{stats.ga} GA</span>
                 </div>
-              </div>
+              </a>
             );
           })}
         </div>
