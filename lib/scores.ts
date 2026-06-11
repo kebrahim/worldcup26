@@ -145,9 +145,14 @@ async function recalculateContestScores(admin: ReturnType<typeof createAdminClie
 
   const contests = ["group_goals_scored", "group_defense", "group_advancements", "knockout_bracket", "knockout_goals"];
   const contestPointsMap = [5, 4, 3, 2, 1];
+  const groupContests = new Set(["group_goals_scored", "group_defense", "group_advancements"]);
+  const groupMatchesExist = (groupMatches ?? []).length > 0;
+  const knockoutMatchesExist = (knockoutMatches ?? []).length > 0;
 
   for (const contest of contests) {
-    const allZero = players.every((p) => (scores[p.id]?.[contest] ?? 0) === 0);
+    const hasData = groupContests.has(contest) ? groupMatchesExist : knockoutMatchesExist;
+    const everyoneZero = players.every((p) => (scores[p.id]?.[contest] ?? 0) === 0);
+    const allZero = !hasData || everyoneZero;
     const descending = contest !== "group_defense";
     const ranked = [...players].sort((a, b) => {
       const diff = (scores[b.id]?.[contest] ?? 0) - (scores[a.id]?.[contest] ?? 0);
