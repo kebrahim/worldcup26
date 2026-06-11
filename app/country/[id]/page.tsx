@@ -92,13 +92,14 @@ export default async function CountryPage({ params }: { params: Promise<{ id: st
 
         {/* Stats row */}
         {played > 0 && (
-          <div className="grid grid-cols-5 gap-3 mb-8">
+          <div className="grid grid-cols-6 gap-3 mb-8">
             {[
               { label: "Played", value: played, color: "text-chalk" },
               { label: "W", value: wins, color: "text-green-400" },
               { label: "D", value: draws, color: "text-chalk/60" },
               { label: "L", value: losses, color: "text-red-400" },
               { label: "GF", value: gf, color: "text-green-400" },
+              { label: "GA", value: ga, color: "text-red-400" },
             ].map(({ label, value, color }) => (
               <div key={label} className="card text-center py-3">
                 <div className={`text-2xl font-bold font-mono ${color}`}>{value}</div>
