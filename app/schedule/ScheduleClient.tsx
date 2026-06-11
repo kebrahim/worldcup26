@@ -27,7 +27,7 @@ type Match = {
   away: Team | Team[];
 };
 
-export default function ScheduleClient({ matches, myTeamIds: myTeamIdsArr }: { matches: Match[]; myTeamIds: number[] }) {
+export default function ScheduleClient({ matches, myTeamIds: myTeamIdsArr, teamOwners }: { matches: Match[]; myTeamIds: number[]; teamOwners: Record<number, string> }) {
   const myTeamIds = useMemo(() => new Set(myTeamIdsArr), [myTeamIdsArr]);
 
   const byDate = useMemo(() => {
@@ -76,6 +76,9 @@ export default function ScheduleClient({ matches, myTeamIds: myTeamIdsArr }: { m
                       <div>
                         <div className="font-bold text-sm">{home?.code ?? "TBD"}</div>
                         <div className="text-xs text-chalk/40 hidden sm:block">{home?.name}</div>
+                        {home?.id && teamOwners[home.id] && (
+                          <div className="text-xs text-chalk/30 hidden sm:block">{teamOwners[home.id]}</div>
+                        )}
                       </div>
                     </a>
 
@@ -105,6 +108,9 @@ export default function ScheduleClient({ matches, myTeamIds: myTeamIdsArr }: { m
                       <div className="text-right">
                         <div className="font-bold text-sm">{away?.code ?? "TBD"}</div>
                         <div className="text-xs text-chalk/40 hidden sm:block">{away?.name}</div>
+                        {away?.id && teamOwners[away.id] && (
+                          <div className="text-xs text-chalk/30 hidden sm:block">{teamOwners[away.id]}</div>
+                        )}
                       </div>
                       <span className="text-xl">{away?.flag_emoji}</span>
                     </a>
