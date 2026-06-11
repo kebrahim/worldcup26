@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 const GROUPS = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L"];
 
 type Team = { id: number; name: string; code: string; group_name: string; flag_emoji: string };
-type Pick = { pick_number: number; team_id: number; user_id: string; profiles: { display_name: string }; teams: { name: string; code: string; flag_emoji: string } };
+type Pick = { pick_number: number; team_id: number; user_id: string; profiles: { display_name: string }; teams: { name: string; code: string; flag_emoji: string; group_name: string } };
 type Player = { id: string; display_name: string };
 type Session = { id: string; stage: string; status: string; current_pick_index: number; current_round: number; snake_order: string[]; total_rounds: number };
 
@@ -32,7 +32,7 @@ export default function DraftBoard({ session, teams, picks, players, currentUser
   const supabase = createClient();
 
   useEffect(() => {
-    if (!session) return;
+    if (!session || session.status !== "active") return;
     const channel = supabase
       .channel("draft-picks")
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "draft_picks", filter: `session_id=eq.${session.id}` },
@@ -69,10 +69,6 @@ export default function DraftBoard({ session, teams, picks, players, currentUser
   }
 
   const playerMap = Object.fromEntries(players.map((p) => [p.id, p.display_name]));
-  const isMyTurn = myUserId === currentUserId;
-  const canPickForCurrent = isCommissioner && currentUserId !== null;
-  const canInteract = isMyTurn || canPickForCurrent;
-  const filteredTeams = groupFilter === "ALL" ? teams : teams.filter((t) => t.group_name === groupFilter);
 
   if (!session) {
     return (
@@ -88,9 +84,60 @@ export default function DraftBoard({ session, teams, picks, players, currentUser
     );
   }
 
+  // Completed draft — show results
+  if (session.status === "completed") {
+    const picksByPlayer: Record<string, Pick[]> = {};
+    for (const pick of picks) {
+      if (!picksByPlayer[pick.user_id]) picksByPlayer[pick.user_id] = [];
+      picksByPlayer[pick.user_id].push(pick);
+    }
+
+    return (
+      <main className="min-h-screen p-4 md:p-8">
+        <div className="max-w-5xl mx-auto">
+          <a href="/" className="text-chalk/40 hover:text-chalk text-sm mb-6 inline-block">← Home</a>
+          <div className="flex items-center gap-4 mb-8">
+            <h1 className="text-3xl font-bold text-gold font-display uppercase tracking-wide">Draft Results</h1>
+            <span className="text-xs border border-green-400/40 text-green-400 px-2 py-0.5 rounded font-mono uppercase">Completed</span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {players.map((player) => {
+              const playerPicks = picksByPlayer[player.id] ?? [];
+              const isMe = player.id === myUserId;
+              return (
+                <div key={player.id} className={`card ${isMe ? "border-gold/50" : ""}`}>
+                  <h2 className={`font-bold mb-3 ${isMe ? "text-gold" : "text-chalk"}`}>
+                    {player.display_name}{isMe && " (you)"}
+                  </h2>
+                  <div className="flex flex-col gap-1.5">
+                    {playerPicks.map((pick) => (
+                      <div key={pick.pick_number} className="flex items-center gap-2 text-sm">
+                        <span className="text-chalk/30 font-mono text-xs w-5">#{pick.pick_number}</span>
+                        <span>{pick.teams?.flag_emoji}</span>
+                        <span className="text-chalk">{pick.teams?.name}</span>
+                        <span className="text-chalk/30 text-xs ml-auto">Grp {pick.teams?.group_name}</span>
+                      </div>
+                    ))}
+                    {playerPicks.length === 0 && <p className="text-chalk/30 text-sm">No picks</p>}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  // Active draft
   const totalPicks = 45;
   const picksMade = picks.length;
   const progressPct = Math.round((picksMade / totalPicks) * 100);
+  const isMyTurn = myUserId === currentUserId;
+  const canPickForCurrent = isCommissioner && currentUserId !== null;
+  const canInteract = isMyTurn || canPickForCurrent;
+  const filteredTeams = groupFilter === "ALL" ? teams : teams.filter((t) => t.group_name === groupFilter);
   const onClockName = playerMap[currentUserId ?? ""] ?? "—";
 
   return (
