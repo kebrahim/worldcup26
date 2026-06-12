@@ -164,15 +164,26 @@ async function recalculateContestScores(admin: ReturnType<typeof createAdminClie
       const diff = (scores[b.id]?.[contest] ?? 0) - (scores[a.id]?.[contest] ?? 0);
       return descending ? diff : -diff;
     });
-    for (let i = 0; i < ranked.length; i++) {
-      const uid = ranked[i].id;
-      await admin.from("contest_scores").upsert({
-        user_id: uid,
-        contest,
-        score: scores[uid]?.[contest] ?? 0,
-        rank: allZero ? null : i + 1,
-        contest_points: allZero ? 0 : (contestPointsMap[i] ?? 1),
-      }, { onConflict: "user_id,contest" });
+
+    // Assign ranks and points accounting for ties
+    let i = 0;
+    while (i < ranked.length) {
+      const currentScore = scores[ranked[i].id]?.[contest] ?? 0;
+      let j = i;
+      while (j < ranked.length && (scores[ranked[j].id]?.[contest] ?? 0) === currentScore) j++;
+      const rank = i + 1;
+      const pts = contestPointsMap[i] ?? 1;
+      for (let k = i; k < j; k++) {
+        const uid = ranked[k].id;
+        await admin.from("contest_scores").upsert({
+          user_id: uid,
+          contest,
+          score: currentScore,
+          rank: allZero ? null : rank,
+          contest_points: allZero ? 0 : pts,
+        }, { onConflict: "user_id,contest" });
+      }
+      i = j;
     }
   }
 }
