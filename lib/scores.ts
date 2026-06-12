@@ -74,6 +74,12 @@ export async function syncScores(): Promise<{ error?: string; matchesUpserted?: 
   }
 
   await recalculateContestScores(admin);
+
+  await admin.from("app_settings").upsert(
+    { key: "last_sync_at", value: new Date().toISOString() },
+    { onConflict: "key" }
+  );
+
   return { matchesUpserted: upserted };
 }
 

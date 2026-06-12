@@ -12,9 +12,10 @@ interface Props {
   sessions: Session[];
   recentPicks: Pick[];
   players: Player[];
+  lastSyncAt: string | null;
 }
 
-export default function AdminPanel({ sessions, recentPicks, players }: Props) {
+export default function AdminPanel({ sessions, recentPicks, players, lastSyncAt }: Props) {
   const [loading, setLoading] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -109,6 +110,11 @@ export default function AdminPanel({ sessions, recentPicks, players }: Props) {
             <div>
               <h2 className="text-chalk font-bold mb-1">Score Sync</h2>
               <p className="text-chalk/40 text-sm">Fetch latest match results and recalculate all contest scores.</p>
+              {lastSyncAt && (
+                <p className="text-chalk/30 text-xs mt-1">
+                  Last synced: {new Date(lastSyncAt).toLocaleString()}
+                </p>
+              )}
             </div>
             <button
               onClick={triggerSync}
