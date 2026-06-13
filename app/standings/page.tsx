@@ -29,7 +29,7 @@ export default async function StandingsPage() {
 
   const admin = createAdminClient();
 
-  const [{ data: teams }, { data: matches }, { data: picks }] = await Promise.all([
+  const [{ data: teams }, { data: matches }, { data: picks }, { data: syncSetting }] = await Promise.all([
     admin.from("teams").select("id, name, code, flag_emoji, group_name").order("group_name").order("name"),
     admin
       .from("matches")
@@ -40,6 +40,7 @@ export default async function StandingsPage() {
       .from("draft_picks")
       .select("team_id, profiles(display_name), draft_sessions!inner(stage)")
       .eq("draft_sessions.stage", "group_stage"),
+    admin.from("app_settings").select("value").eq("key", "last_sync_at").maybeSingle(),
   ]);
 
   // Build owner map
@@ -101,9 +102,15 @@ export default async function StandingsPage() {
       <div className="max-w-5xl mx-auto">
         <a href="/" className="text-chalk/40 hover:text-chalk text-sm mb-6 inline-block">← Home</a>
         <h1 className="text-3xl font-bold text-gold font-display uppercase tracking-wide mb-2">Group Standings</h1>
-        <p className="text-chalk/40 text-sm mb-8">
-          {hasMatches ? "Updated after each sync" : "No matches played yet"}
+        <p className="text-chalk/40 text-sm mb-1">
+          {hasMatches ? "Top 2 teams in each group advance" : "No matches played yet"}
         </p>
+        {syncSetting?.value && (
+          <p className="text-chalk/30 text-xs font-mono mb-8">
+            Last synced: {new Date(syncSetting.value).toLocaleString()}
+          </p>
+        )}
+        {!syncSetting?.value && <div className="mb-8" />}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {GROUPS.map((g) => {
