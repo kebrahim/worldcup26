@@ -132,7 +132,7 @@ export default async function StandingsPage() {
                           <a href={`/country/${row.id}`} className="flex items-center gap-2 hover:opacity-80 transition-opacity">
                             <span>{row.flag_emoji}</span>
                             <div>
-                              <span className={`font-bold ${row.id === user?.id ? "text-gold" : "text-chalk"}`}>
+                              <span className={`font-bold text-chalk`}>
                                 {row.code}
                               </span>
                               {row.owner && (
