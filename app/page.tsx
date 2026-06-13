@@ -38,6 +38,7 @@ export default async function Home() {
           {[
             { label: "Leaderboard", href: "/leaderboard", desc: "Overall standings" },
             { label: "Schedule", href: "/schedule", desc: "All matches" },
+            { label: "Group Standings", href: "/standings", desc: "Group stage tables" },
             { label: "My Teams", href: "/teams", desc: "Your roster & stats" },
             { label: "Draft Board", href: "/draft", desc: "Draft results" },
             ...(profile?.is_commissioner
