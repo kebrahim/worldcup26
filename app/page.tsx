@@ -36,10 +36,10 @@ export default async function Home() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {[
-            { label: "Draft Board", href: "/draft", desc: "Make your picks" },
             { label: "Leaderboard", href: "/leaderboard", desc: "Overall standings" },
-            { label: "My Teams", href: "/teams", desc: "Your roster & stats" },
             { label: "Schedule", href: "/schedule", desc: "All matches" },
+            { label: "My Teams", href: "/teams", desc: "Your roster & stats" },
+            { label: "Draft Board", href: "/draft", desc: "Draft results" },
             ...(profile?.is_commissioner
               ? [{ label: "Admin", href: "/admin", desc: "Commissioner controls" }]
               : []),
