@@ -40,6 +40,7 @@ export default async function Home() {
             { label: "Schedule", href: "/schedule", desc: "All matches" },
             { label: "Group Standings", href: "/standings", desc: "Group stage tables" },
             { label: "My Teams", href: "/teams", desc: "Your roster & stats" },
+            { label: "Bracket", href: "/bracket", desc: "Knockout bracket" },
             { label: "Draft Board", href: "/draft", desc: "Draft results" },
             ...(profile?.is_commissioner
               ? [{ label: "Admin", href: "/admin", desc: "Commissioner controls" }]
