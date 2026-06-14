@@ -62,7 +62,7 @@ export default async function PredictPage() {
 
   // Build leaderboard
   const profileMap: Record<string, string> = {};
-  for (const p of (profiles as Profile[]) ?? []) {
+  for (const p of (profiles as unknown as Profile[]) ?? []) {
     profileMap[p.id] = p.display_name ?? "Anonymous";
   }
 
@@ -75,7 +75,7 @@ export default async function PredictPage() {
     string,
     { score: number; correct: number; total: number }
   > = {};
-  for (const pick of (picks as BracketPick[]) ?? []) {
+  for (const pick of (picks as unknown as BracketPick[]) ?? []) {
     if (!scoresByUser[pick.user_id]) {
       scoresByUser[pick.user_id] = { score: 0, correct: 0, total: 0 };
     }
