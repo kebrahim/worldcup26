@@ -30,7 +30,7 @@ export default async function PickPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) redirect("/login");
+  if (!user) redirect("/login?next=/predict/pick");
 
   const now = new Date();
   if (now >= DEADLINE) {

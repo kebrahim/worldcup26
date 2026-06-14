@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { redirect } from "next/navigation";
 import SignOutButton from "@/components/SignOutButton";
 
@@ -8,11 +9,14 @@ export default async function Home() {
 
   if (!user) redirect("/login");
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("display_name, is_commissioner")
-    .eq("id", user.id)
-    .single();
+  const admin = createAdminClient();
+
+  const [{ data: profile }, { count: draftPickCount }] = await Promise.all([
+    supabase.from("profiles").select("display_name, is_commissioner").eq("id", user.id).single(),
+    admin.from("draft_picks").select("*", { count: "exact", head: true }).eq("user_id", user.id),
+  ]);
+
+  if (!draftPickCount) redirect("/predict");
 
   return (
     <main className="min-h-screen p-8">

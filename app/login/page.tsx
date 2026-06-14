@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
-export default function LoginPage() {
+function LoginForm() {
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -13,6 +13,8 @@ export default function LoginPage() {
   const [message, setMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const next = searchParams.get("next") ?? "/";
   const supabase = createClient();
 
   async function handleSubmit(e: React.FormEvent) {
@@ -37,7 +39,7 @@ export default function LoginPage() {
       if (error) {
         setError(error.message);
       } else {
-        router.push("/");
+        router.push(next);
         router.refresh();
       }
     }
@@ -141,5 +143,13 @@ export default function LoginPage() {
         </div>
       </div>
     </main>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginForm />
+    </Suspense>
   );
 }

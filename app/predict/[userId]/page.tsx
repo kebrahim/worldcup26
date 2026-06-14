@@ -51,7 +51,7 @@ export default async function UserBracketPage({
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) redirect("/login");
+  if (!user) redirect("/login?next=/predict");
 
   const now = new Date();
   const afterDeadline = now >= DEADLINE;
