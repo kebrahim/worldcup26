@@ -109,6 +109,13 @@ export default function PickClient({ matches, existingPicks, existingTiebreaker 
           </span>
         </div>
 
+        <div className="card mb-6 bg-gold/5 border-gold/30">
+          <p className="text-chalk text-sm font-bold mb-1">Bracket not yet finalized</p>
+          <p className="text-chalk/60 text-sm">
+            The knockout bracket will be set once the group stage is complete. Come back on June 27 to make your picks.
+          </p>
+        </div>
+
         <p className="text-chalk/40 text-sm mb-6">
           {pickedCount} of {totalMatches} matches picked
         </p>
