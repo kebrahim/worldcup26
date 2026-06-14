@@ -55,7 +55,7 @@ export default async function Home() {
 
         <div className="mt-6 border-t border-border pt-6">
           <p className="text-xs uppercase tracking-widest text-chalk/30 font-mono mb-3">Separate Contest</p>
-          <a href="/predict" className="card hover:border-chalk/40 transition-colors group border-dashed">
+          <a href="/predict" className="block w-full card hover:border-chalk/40 transition-colors group border-dashed">
             <div className="text-chalk font-bold group-hover:text-chalk transition-colors">Bracket Prediction Contest</div>
             <div className="text-chalk/50 text-sm mt-1">Pick the knockout bracket winners — open to everyone</div>
           </a>
