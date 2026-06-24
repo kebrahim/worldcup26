@@ -33,6 +33,11 @@ export default async function LeaderboardPage() {
     .map((p) => ({ ...p, total: totals[p.id] ?? 0 }))
     .sort((a, b) => b.total - a.total);
 
+  const overallRanks: number[] = [];
+  for (let i = 0; i < overall.length; i++) {
+    overallRanks.push(i > 0 && overall[i].total === overall[i - 1].total ? overallRanks[i - 1] : i + 1);
+  }
+
   const byContest: Record<string, Array<{ user_id: string; score: number; rank: number | null; contest_points: number }>> = {};
   for (const cs of contestScores ?? []) {
     if (!byContest[cs.contest]) byContest[cs.contest] = [];
@@ -60,7 +65,7 @@ export default async function LeaderboardPage() {
               overall.map((p, i) => (
                 <div key={p.id} className={`flex items-center justify-between ${p.id === user?.id ? "text-gold" : "text-chalk"}`}>
                   <div className="flex items-center gap-3">
-                    <span className={`font-mono text-sm w-5 ${rankColors[i] ?? "text-chalk/30"}`}>#{i + 1}</span>
+                    <span className={`font-mono text-sm w-5 ${rankColors[overallRanks[i] - 1] ?? "text-chalk/30"}`}>#{overallRanks[i]}</span>
                     <span className="font-bold">{p.display_name}{p.id === user?.id && " (you)"}</span>
                   </div>
                   <span className="font-mono font-bold">{p.total} pts</span>
