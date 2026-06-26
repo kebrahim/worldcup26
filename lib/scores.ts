@@ -104,6 +104,16 @@ async function recalculateContestScores(admin: ReturnType<typeof createAdminClie
     .neq("stage", "group")
     .eq("status", "completed");
 
+  const { data: knockoutTeamsData } = await admin
+    .from("matches")
+    .select("home_team_id, away_team_id")
+    .neq("stage", "group");
+  const advancedTeamIds = new Set<number>();
+  for (const m of knockoutTeamsData ?? []) {
+    if (m.home_team_id) advancedTeamIds.add(m.home_team_id);
+    if (m.away_team_id) advancedTeamIds.add(m.away_team_id);
+  }
+
   const roundPoints: Record<string, number> = {
     round_of_32: 1, round_of_16: 2, quarterfinal: 3, semifinal: 4, final: 5,
   };
@@ -131,10 +141,7 @@ async function recalculateContestScores(admin: ReturnType<typeof createAdminClie
         scores[uid].group_defense += m.home_score ?? 0;
       }
     }
-    const advanced = (knockoutMatches ?? []).some(
-      (m) => m.home_team_id === pick.team_id || m.away_team_id === pick.team_id
-    );
-    if (advanced) scores[uid].group_advancements += 1;
+    if (advancedTeamIds.has(pick.team_id)) scores[uid].group_advancements += 1;
 
     for (const m of knockoutMatches ?? []) {
       const isHome = m.home_team_id === pick.team_id;
