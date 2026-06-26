@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { redirect } from "next/navigation";
+import SyncTime from "@/components/SyncTime";
 
 export const revalidate = 60;
 
@@ -107,7 +108,7 @@ export default async function StandingsPage() {
         </p>
         {syncSetting?.value && (
           <p className="text-chalk/30 text-xs font-mono mb-8">
-            Last synced: {new Date(syncSetting.value).toLocaleString()}
+            Last synced: <SyncTime value={syncSetting.value} />
           </p>
         )}
         {!syncSetting?.value && <div className="mb-8" />}

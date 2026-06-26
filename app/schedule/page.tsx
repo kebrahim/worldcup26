@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { redirect } from "next/navigation";
 import ScheduleClient from "./ScheduleClient";
+import SyncTime from "@/components/SyncTime";
 
 export const revalidate = 60;
 
@@ -47,7 +48,7 @@ export default async function SchedulePage() {
         <p className="text-chalk/40 text-sm mb-6">All matches — your teams are highlighted</p>
         {lastSyncAt && (
           <p className="text-chalk/30 text-xs mb-6 font-mono">
-            Results last synced: {new Date(lastSyncAt).toLocaleString()}
+            Results last synced: <SyncTime value={lastSyncAt} />
           </p>
         )}
         <ScheduleClient matches={matches ?? []} myTeamIds={myTeamIds} teamOwners={teamOwners} />

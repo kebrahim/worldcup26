@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { redirect } from "next/navigation";
+import SyncTime from "@/components/SyncTime";
 
 export const revalidate = 60;
 
@@ -51,7 +52,7 @@ export default async function BracketPage() {
         <p className="text-chalk/40 text-sm mb-1">Your teams are highlighted in gold</p>
         {syncSetting?.value && (
           <p className="text-chalk/30 text-xs font-mono mb-8">
-            Last synced: {new Date(syncSetting.value).toLocaleString()}
+            Last synced: <SyncTime value={syncSetting.value} />
           </p>
         )}
         {!syncSetting?.value && <div className="mb-8" />}
