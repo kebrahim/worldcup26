@@ -1,5 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
+import Link from "next/link";
 
 export const revalidate = 60;
 
@@ -66,7 +67,9 @@ export default async function LeaderboardPage() {
                 <div key={p.id} className={`flex items-center justify-between ${p.id === user?.id ? "text-gold" : "text-chalk"}`}>
                   <div className="flex items-center gap-3">
                     <span className={`font-mono text-sm w-5 ${rankColors[overallRanks[i] - 1] ?? "text-chalk/30"}`}>#{overallRanks[i]}</span>
-                    <span className="font-bold">{p.display_name}{p.id === user?.id && " (you)"}</span>
+                    <Link href={`/teams?player=${p.id}`} className="font-bold hover:text-gold transition-colors">
+                      {p.display_name}{p.id === user?.id && " (you)"}
+                    </Link>
                   </div>
                   <span className="font-mono font-bold">{p.total} pts</span>
                 </div>
@@ -104,7 +107,9 @@ export default async function LeaderboardPage() {
                           <span className={`font-mono w-5 ${rankColors[i] ?? "text-chalk/30"}`}>
                             {row.rank != null ? `#${row.rank}` : "—"}
                           </span>
-                          <span>{playerMap[row.user_id] ?? "—"}{row.user_id === user?.id && " (you)"}</span>
+                          <Link href={`/teams?player=${row.user_id}`} className="hover:text-gold transition-colors">
+                            {playerMap[row.user_id] ?? "—"}{row.user_id === user?.id && " (you)"}
+                          </Link>
                         </div>
                         <div className="flex items-center gap-4">
                           <span className="text-chalk/50 font-mono">{row.score}</span>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useSearchParams } from "next/navigation";
 
 const CONTESTS = [
   { key: "group_goals_scored", label: "Group Goals", higher: true, unit: "goals" },
@@ -30,7 +31,13 @@ export default function TeamsClient({
   players: PlayerData[];
   myUserId: string | null;
 }) {
-  const defaultId = myUserId ?? players[0]?.id ?? "";
+  const searchParams = useSearchParams();
+  const playerParam = searchParams.get("player");
+  const defaultId =
+    (playerParam && players.some((p) => p.id === playerParam) ? playerParam : null) ??
+    myUserId ??
+    players[0]?.id ??
+    "";
   const [selectedId, setSelectedId] = useState(defaultId);
 
   const player = players.find((p) => p.id === selectedId) ?? players[0];

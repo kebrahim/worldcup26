@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { redirect } from "next/navigation";
+import { Suspense } from "react";
 import TeamsClient from "./TeamsClient";
 
 export const revalidate = 60;
@@ -69,7 +70,9 @@ export default async function TeamsPage() {
         <a href="/" className="text-chalk/40 hover:text-chalk text-sm mb-6 inline-block">← Home</a>
         <h1 className="text-3xl font-bold text-gold font-display uppercase tracking-wide mb-2">Teams</h1>
         <p className="text-chalk/40 text-sm mb-6">Roster and contest scores by player</p>
-        <TeamsClient players={players} myUserId={user.id} />
+        <Suspense>
+          <TeamsClient players={players} myUserId={user.id} />
+        </Suspense>
       </div>
     </main>
   );
