@@ -43,10 +43,30 @@ export async function GET(request: Request) {
       )
     : [];
 
+  const stageBreakdown: Record<string, { total: number; determined: number; tbd: number }> = {};
+  for (const m of matches ?? []) {
+    const key = m.stage ?? "UNKNOWN";
+    if (!stageBreakdown[key]) stageBreakdown[key] = { total: 0, determined: 0, tbd: 0 };
+    stageBreakdown[key].total++;
+    if (m.homeTeam?.tla && m.awayTeam?.tla) stageBreakdown[key].determined++;
+    else stageBreakdown[key].tbd++;
+  }
+
+  const round32Matches = (matches ?? [])
+    .filter((m: { stage?: string }) => m.stage === "ROUND_OF_32" || m.stage === "LAST_32")
+    .map((m: { id: number; homeTeam?: { name?: string }; awayTeam?: { name?: string }; status: string }) => ({
+      id: m.id,
+      home: m.homeTeam?.name ?? "TBD",
+      away: m.awayTeam?.name ?? "TBD",
+      status: m.status,
+    }));
+
   return NextResponse.json({
     totalTeams: Object.keys(teams).length,
     teams: Object.values(teams).sort((a, b) => a.group.localeCompare(b.group) || a.name.localeCompare(b.name)),
     codeMismatches: Object.values(teams).filter((t) => !dbCodeMap[t.tla]),
     matchingRawMatches,
+    stageBreakdown,
+    round32Matches,
   });
 }
