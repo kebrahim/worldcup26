@@ -30,7 +30,7 @@ insert into teams (name, code, group_name, flag_emoji) values
   ('Cape Verde Islands', 'CPV', 'H', '🇨🇻'),
   ('Saudi Arabia', 'KSA', 'H', '🇸🇦'),
   ('Spain', 'ESP', 'H', '🇪🇸'),
-  ('Uruguay', 'URY', 'H', '🇺🇾'),
+  ('Uruguay', 'URU', 'H', '🇺🇾'),
   ('France', 'FRA', 'I', '🇫🇷'),
   ('Iraq', 'IRQ', 'I', '🇮🇶'),
   ('Norway', 'NOR', 'I', '🇳🇴'),
