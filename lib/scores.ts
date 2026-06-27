@@ -1,15 +1,19 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 
-function mapStage(stage: string): string {
-  const map: Record<string, string> = {
-    "GROUP_STAGE": "group",
-    "LAST_32": "round_of_32",
-    "LAST_16": "round_of_16",
-    "QUARTER_FINALS": "quarterfinal",
-    "SEMI_FINALS": "semifinal",
-    "FINAL": "final",
-  };
-  return map[stage] ?? "group";
+const STAGE_MAP: Record<string, string> = {
+  "GROUP_STAGE": "group",
+  "LAST_32": "round_of_32",
+  "ROUND_OF_32": "round_of_32",
+  "LAST_16": "round_of_16",
+  "ROUND_OF_16": "round_of_16",
+  "QUARTER_FINALS": "quarterfinal",
+  "SEMI_FINALS": "semifinal",
+  "THIRD_PLACE": "third_place",
+  "FINAL": "final",
+};
+
+function mapStage(stage: string): string | null {
+  return STAGE_MAP[stage] ?? null;
 }
 
 export async function syncScores(): Promise<{ error?: string; matchesUpserted?: number; skipped?: string[] }> {
@@ -48,6 +52,10 @@ export async function syncScores(): Promise<{ error?: string; matchesUpserted?: 
       : "scheduled";
 
     const stage = mapStage(match.stage);
+    if (!stage) {
+      skipped.push(`${match.homeTeam?.name} vs ${match.awayTeam?.name} (unrecognized stage: ${match.stage})`);
+      continue;
+    }
     const groupName = match.group ? match.group.replace("GROUP_", "") : null;
 
     const homeScore = match.score?.fullTime?.home ?? null;

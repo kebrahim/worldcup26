@@ -3,7 +3,7 @@ create extension if not exists "pgcrypto";
 
 create type draft_stage as enum ('group_stage', 'knockout');
 create type draft_status as enum ('pending', 'active', 'completed');
-create type match_stage as enum ('group', 'round_of_32', 'round_of_16', 'quarterfinal', 'semifinal', 'final');
+create type match_stage as enum ('group', 'round_of_32', 'round_of_16', 'quarterfinal', 'semifinal', 'third_place', 'final');
 create type match_status as enum ('scheduled', 'live', 'completed');
 
 create table profiles (
