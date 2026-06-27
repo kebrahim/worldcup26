@@ -50,32 +50,46 @@ export async function syncScores(): Promise<{ error?: string; matchesUpserted?: 
   for (const match of matches) {
     const homeCode = match.homeTeam?.tla;
     const awayCode = match.awayTeam?.tla;
-    const homeId = teamCodeMap[homeCode];
-    const awayId = teamCodeMap[awayCode];
-    if (!homeId || !awayId) {
-      skipped.push(`${match.homeTeam?.name ?? homeCode} (${homeCode}) vs ${match.awayTeam?.name ?? awayCode} (${awayCode})`);
+    const homeId = homeCode ? teamCodeMap[homeCode] ?? null : null;
+    const awayId = awayCode ? teamCodeMap[awayCode] ?? null : null;
+    const teamCodeUnresolved = (homeCode && !homeId) || (awayCode && !awayId);
+    if (teamCodeUnresolved) {
+      skipped.push(`${match.homeTeam?.name ?? homeCode} (${homeCode}) vs ${match.awayTeam?.name ?? awayCode} (${awayCode}) (unrecognized team code)`);
       continue;
     }
-
-    const status = match.status === "FINISHED" ? "completed"
-      : match.status === "IN_PLAY" || match.status === "PAUSED" ? "live"
-      : "scheduled";
 
     const stage = mapStage(match.stage);
     if (!stage) {
       skipped.push(`${match.homeTeam?.name} vs ${match.awayTeam?.name} (unrecognized stage: ${match.stage})`);
       continue;
     }
+
+    if ((!homeId || !awayId) && stage === "group") {
+      skipped.push(`${match.homeTeam?.name ?? homeCode} (${homeCode}) vs ${match.awayTeam?.name ?? awayCode} (${awayCode})`);
+      continue;
+    }
+
+    const status = !homeId || !awayId ? "scheduled"
+      : match.status === "FINISHED" ? "completed"
+      : match.status === "IN_PLAY" || match.status === "PAUSED" ? "live"
+      : "scheduled";
+
+    if (!homeId || !awayId) {
+      skipped.push(`${match.homeTeam?.name ?? "TBD"} (${homeCode ?? "TBD"}) vs ${match.awayTeam?.name ?? "TBD"} (${awayCode ?? "TBD"}) (not yet determined)`);
+    }
+
     const groupName = match.group ? match.group.replace("GROUP_", "") : null;
 
-    const homeScore = match.score?.fullTime?.home ?? null;
-    const awayScore = match.score?.fullTime?.away ?? null;
-    const homePen = match.score?.penalties?.home ?? null;
-    const awayPen = match.score?.penalties?.away ?? null;
+    const homeScore = homeId && awayId ? match.score?.fullTime?.home ?? null : null;
+    const awayScore = homeId && awayId ? match.score?.fullTime?.away ?? null : null;
+    const homePen = homeId && awayId ? match.score?.penalties?.home ?? null : null;
+    const awayPen = homeId && awayId ? match.score?.penalties?.away ?? null : null;
 
     let winnerId: number | null = null;
-    if (match.score?.winner === "HOME_TEAM") winnerId = homeId;
-    else if (match.score?.winner === "AWAY_TEAM") winnerId = awayId;
+    if (homeId && awayId) {
+      if (match.score?.winner === "HOME_TEAM") winnerId = homeId;
+      else if (match.score?.winner === "AWAY_TEAM") winnerId = awayId;
+    }
 
     const { error: upsertError } = await admin.from("matches").upsert({
       id: match.id,
