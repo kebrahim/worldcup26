@@ -28,7 +28,17 @@ export async function syncScores(): Promise<{ error?: string; matchesUpserted?: 
 
   if (!res.ok) return { error: `Failed to fetch matches: ${res.status}` };
 
-  const { matches } = await res.json();
+  const body = await res.json();
+  const matches = body.matches;
+
+  if (!Array.isArray(matches) || matches.length === 0) {
+    return { error: "API returned no matches (possibly rate-limited) — try again in a minute" };
+  }
+
+  const teamlessCount = matches.filter((m) => !m.homeTeam?.tla && !m.awayTeam?.tla).length;
+  if (teamlessCount > matches.length / 2) {
+    return { error: `API response looks degraded (${teamlessCount}/${matches.length} matches missing team data, possibly rate-limited) — try again in a minute` };
+  }
 
   const { data: teams } = await admin.from("teams").select("id, code");
   const teamCodeMap = Object.fromEntries(
