@@ -47,10 +47,13 @@ export default function AdminPanel({ sessions, recentPicks, players, lastSyncAt 
     setMessage(null);
     setLoading("sync");
     const result = await triggerScoreSync();
-    if ("error" in result) {
-      setError(result.error ?? "Sync failed");
+    if (result.error) {
+      setError(result.error);
     } else {
-      setMessage("Score sync completed.");
+      const skippedNote = result.skipped?.length
+        ? ` Skipped ${result.skipped.length} match(es): ${result.skipped.join("; ")}`
+        : "";
+      setMessage(`Score sync completed.${skippedNote}`);
       router.refresh();
     }
     setLoading(null);

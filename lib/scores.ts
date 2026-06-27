@@ -12,7 +12,7 @@ function mapStage(stage: string): string {
   return map[stage] ?? "group";
 }
 
-export async function syncScores(): Promise<{ error?: string; matchesUpserted?: number }> {
+export async function syncScores(): Promise<{ error?: string; matchesUpserted?: number; skipped?: string[] }> {
   const apiKey = process.env.WC2026_API_KEY;
   if (!apiKey) return { error: "WC2026_API_KEY not configured" };
 
@@ -32,12 +32,16 @@ export async function syncScores(): Promise<{ error?: string; matchesUpserted?: 
   );
 
   let upserted = 0;
+  const skipped: string[] = [];
   for (const match of matches) {
     const homeCode = match.homeTeam?.tla;
     const awayCode = match.awayTeam?.tla;
     const homeId = teamCodeMap[homeCode];
     const awayId = teamCodeMap[awayCode];
-    if (!homeId || !awayId) continue;
+    if (!homeId || !awayId) {
+      skipped.push(`${match.homeTeam?.name ?? homeCode} (${homeCode}) vs ${match.awayTeam?.name ?? awayCode} (${awayCode})`);
+      continue;
+    }
 
     const status = match.status === "FINISHED" ? "completed"
       : match.status === "IN_PLAY" || match.status === "PAUSED" ? "live"
@@ -55,7 +59,7 @@ export async function syncScores(): Promise<{ error?: string; matchesUpserted?: 
     if (match.score?.winner === "HOME_TEAM") winnerId = homeId;
     else if (match.score?.winner === "AWAY_TEAM") winnerId = awayId;
 
-    await admin.from("matches").upsert({
+    const { error: upsertError } = await admin.from("matches").upsert({
       id: match.id,
       stage,
       group_name: groupName,
@@ -70,6 +74,10 @@ export async function syncScores(): Promise<{ error?: string; matchesUpserted?: 
       status,
       venue: match.venue ?? null,
     });
+    if (upsertError) {
+      skipped.push(`${match.homeTeam?.name} vs ${match.awayTeam?.name} (upsert error: ${upsertError.message})`);
+      continue;
+    }
     upserted++;
   }
 
@@ -80,7 +88,7 @@ export async function syncScores(): Promise<{ error?: string; matchesUpserted?: 
     { onConflict: "key" }
   );
 
-  return { matchesUpserted: upserted };
+  return { matchesUpserted: upserted, skipped: skipped.length > 0 ? skipped : undefined };
 }
 
 async function recalculateContestScores(admin: ReturnType<typeof createAdminClient>) {

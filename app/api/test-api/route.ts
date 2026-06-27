@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
-export async function GET() {
+export async function GET(request: Request) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -31,8 +31,22 @@ export async function GET() {
     if (a?.tla) teams[a.tla] = { name: a.name, tla: a.tla, group };
   }
 
+  const { data: dbTeams } = await admin.from("teams").select("id, code, name");
+  const dbCodeMap = Object.fromEntries((dbTeams ?? []).map((t) => [t.code, t]));
+
+  const searchParam = new URL(request.url).searchParams.get("search");
+  const matchingRawMatches = searchParam
+    ? (matches ?? []).filter((m: { homeTeam?: { name?: string }; awayTeam?: { name?: string } }) =>
+        [m.homeTeam?.name, m.awayTeam?.name].some((n) =>
+          n?.toLowerCase().includes(searchParam.toLowerCase())
+        )
+      )
+    : [];
+
   return NextResponse.json({
     totalTeams: Object.keys(teams).length,
     teams: Object.values(teams).sort((a, b) => a.group.localeCompare(b.group) || a.name.localeCompare(b.name)),
+    codeMismatches: Object.values(teams).filter((t) => !dbCodeMap[t.tla]),
+    matchingRawMatches,
   });
 }
