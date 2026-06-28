@@ -371,11 +371,12 @@ export default function PickClient({ matches, existingPicks, existingTiebreaker 
             Tiebreaker <span className="text-red-400">*required</span>
           </h2>
           <p className="text-chalk/60 text-sm mb-1">
-            Predict the total number of goals scored in the entire tournament. Your bracket is not
+            Predict the total number of goals scored in the knockout stage. Your bracket is not
             complete without this.
           </p>
           <p className="text-chalk/40 text-xs mb-3">
-            Counts goals scored in regulation and extra time only — penalty shootout goals don&apos;t count.
+            Knockout stage only — group stage goals don&apos;t count. Counts goals scored in regulation
+            and extra time only — penalty shootout goals don&apos;t count.
           </p>
           <input
             type="number"

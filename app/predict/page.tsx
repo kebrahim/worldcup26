@@ -90,13 +90,13 @@ export default async function PredictPage() {
         ),
       admin.from("bracket_tiebreaker").select("user_id, predicted_total_goals"),
       admin.from("matches").select("*", { count: "exact", head: true }).neq("stage", "group"),
-      admin.from("matches").select("home_score, away_score, status"),
+      admin.from("matches").select("home_score, away_score, status").neq("stage", "group"),
     ]);
 
-  // Tournament total goals for the tiebreaker — regulation + extra time only,
-  // penalty shootout goals (home_score_pen/away_score_pen) are excluded. Only
-  // counts completed matches, so this climbs toward the final total as the
-  // tournament progresses.
+  // Knockout-stage total goals for the tiebreaker — regulation + extra time only,
+  // penalty shootout goals (home_score_pen/away_score_pen) are excluded, and group
+  // stage goals don't count. Only counts completed matches, so this climbs toward
+  // the final total as the knockout stage progresses.
   type GoalsRow = { home_score: number | null; away_score: number | null; status: string };
   const tournamentMatches = (allMatches as GoalsRow[]) ?? [];
   const actualTotalGoals = tournamentMatches
@@ -348,9 +348,9 @@ export default async function PredictPage() {
         <div className="card mb-6 bg-surface/50">
           <p className="text-chalk/50 text-sm">
             {tournamentComplete ? (
-              <>Final tournament total: <span className="text-gold font-mono font-bold">{actualTotalGoals}</span> goals (regulation + extra time, excludes penalty shootouts).</>
+              <>Final knockout-stage total: <span className="text-gold font-mono font-bold">{actualTotalGoals}</span> goals (knockout stage only, regulation + extra time, excludes penalty shootouts).</>
             ) : (
-              <>Tournament goals so far: <span className="text-gold font-mono font-bold">{actualTotalGoals}</span> (regulation + extra time, excludes penalty shootouts) — the tiebreaker is decided by the closest guess once the tournament ends.</>
+              <>Knockout-stage goals so far: <span className="text-gold font-mono font-bold">{actualTotalGoals}</span> (knockout stage only, regulation + extra time, excludes penalty shootouts) — the tiebreaker is decided by the closest guess once the tournament ends.</>
             )}
           </p>
         </div>
