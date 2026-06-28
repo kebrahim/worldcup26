@@ -120,6 +120,15 @@ export default async function UserBracketPage({
     };
   });
 
+  // Every team that has appeared as a home/away side anywhere in this user's picks —
+  // used to resolve the predicted team even for future rounds where the real matchup
+  // (and therefore match.home/away) isn't determined yet.
+  const teamMap: Record<number, Team> = {};
+  for (const p of picks) {
+    if (p.match?.home) teamMap[p.match.home.id] = p.match.home;
+    if (p.match?.away) teamMap[p.match.away.id] = p.match.away;
+  }
+
   // Group by round
   const byRound: Record<string, PickRow[]> = {};
   for (const p of picks) {
@@ -226,7 +235,11 @@ export default async function UserBracketPage({
                       }
 
                       const predictedTeam =
-                        predictedId === home?.id ? home : away;
+                        predictedId === home?.id
+                          ? home
+                          : predictedId === away?.id
+                          ? away
+                          : teamMap[predictedId] ?? null;
 
                       return (
                         <div

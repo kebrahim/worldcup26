@@ -40,10 +40,77 @@ export default function PickClient({ matches, existingPicks, existingTiebreaker 
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const byRound: Record<string, Match[]> = {};
+  // Group real matches by round, sorted by id so bracket pairing (winner of slot 2i
+  // plays winner of slot 2i+1 in the next round) is stable across renders.
+  const sortedRounds: Record<string, Match[]> = {};
+  for (const { key } of ROUNDS) {
+    sortedRounds[key] = matches
+      .filter((m) => m.stage === key)
+      .slice()
+      .sort((a, b) => a.id - b.id);
+  }
+
+  // Every team that has ever appeared as a home/away side anywhere in the bracket.
+  const teamMap: Record<number, Team> = {};
   for (const m of matches) {
-    if (!byRound[m.stage]) byRound[m.stage] = [];
-    byRound[m.stage]!.push(m);
+    if (m.home) teamMap[m.home.id] = m.home;
+    if (m.away) teamMap[m.away.id] = m.away;
+  }
+
+  // Walk the rounds in order, deriving each match's effective home/away from the
+  // (real or predicted) winners of the previous round, and each match's winner
+  // from the user's pick — but only if that pick is still valid for the current
+  // matchup (a pick becomes stale if an earlier-round selection changes).
+  const effective: Record<number, { home: Team | null; away: Team | null }> = {};
+  const winners: Record<number, Team | null> = {};
+
+  function computeWinner(m: Match, eff: { home: Team | null; away: Team | null }): Team | null {
+    if (m.status === "completed" && m.winner_team_id) {
+      return teamMap[m.winner_team_id] ?? null;
+    }
+    const pickedId = picks[m.id];
+    if (pickedId && (eff.home?.id === pickedId || eff.away?.id === pickedId)) {
+      return teamMap[pickedId] ?? null;
+    }
+    return null;
+  }
+
+  for (const r32 of sortedRounds.round_of_32) {
+    effective[r32.id] = { home: r32.home, away: r32.away };
+  }
+
+  for (let i = 1; i < ROUNDS.length; i++) {
+    const prev = sortedRounds[ROUNDS[i - 1].key];
+    const curr = sortedRounds[ROUNDS[i].key];
+    for (const m of prev) {
+      winners[m.id] = computeWinner(m, effective[m.id]);
+    }
+    curr.forEach((m, idx) => {
+      const a = prev[idx * 2];
+      const b = prev[idx * 2 + 1];
+      effective[m.id] = {
+        home: a ? winners[a.id] ?? null : null,
+        away: b ? winners[b.id] ?? null : null,
+      };
+    });
+  }
+  // Winners of the final round (no downstream round needs these, but used for
+  // validating the displayed selection / save payload below).
+  const lastRound = sortedRounds[ROUNDS[ROUNDS.length - 1].key];
+  for (const m of lastRound) {
+    winners[m.id] = computeWinner(m, effective[m.id]);
+  }
+
+  // Only picks that are still consistent with the current bracket state get saved.
+  const validPicks: Record<number, number> = {};
+  for (const { key } of ROUNDS) {
+    for (const m of sortedRounds[key]) {
+      const eff = effective[m.id];
+      const pickedId = picks[m.id];
+      if (pickedId && eff && (eff.home?.id === pickedId || eff.away?.id === pickedId)) {
+        validPicks[m.id] = pickedId;
+      }
+    }
   }
 
   function selectWinner(matchId: number, teamId: number) {
@@ -57,7 +124,7 @@ export default function PickClient({ matches, existingPicks, existingTiebreaker 
     setSaved(false);
     setError(null);
 
-    const picksArray = Object.entries(picks).map(([matchId, teamId]) => ({
+    const picksArray = Object.entries(validPicks).map(([matchId, teamId]) => ({
       matchId: Number(matchId),
       teamId,
     }));
@@ -84,7 +151,7 @@ export default function PickClient({ matches, existingPicks, existingTiebreaker 
   }
 
   const totalMatches = matches.length;
-  const pickedCount = Object.keys(picks).length;
+  const pickedCount = Object.keys(validPicks).length;
 
   return (
     <main className="min-h-screen p-4 md:p-8">
@@ -110,9 +177,10 @@ export default function PickClient({ matches, existingPicks, existingTiebreaker 
         </div>
 
         <div className="card mb-6 bg-gold/5 border-gold/30">
-          <p className="text-chalk text-sm font-bold mb-1">Bracket not yet finalized</p>
+          <p className="text-chalk text-sm font-bold mb-1">Pick your whole bracket now</p>
           <p className="text-chalk/60 text-sm">
-            The knockout bracket will be set once the group stage is complete. Come back on June 27 to make your picks.
+            Picking a winner instantly advances them into the next round below — no need to save between
+            rounds. Click <strong>Save Picks</strong> once you&apos;re happy with your full bracket.
           </p>
         </div>
 
@@ -122,7 +190,7 @@ export default function PickClient({ matches, existingPicks, existingTiebreaker 
 
         <div className="flex flex-col gap-10">
           {ROUNDS.map(({ key, label }) => {
-            const roundMatches = byRound[key] ?? [];
+            const roundMatches = sortedRounds[key] ?? [];
             if (roundMatches.length === 0) return null;
             return (
               <div key={key}>
@@ -131,9 +199,14 @@ export default function PickClient({ matches, existingPicks, existingTiebreaker 
                 </h2>
                 <div className="flex flex-col gap-2">
                   {roundMatches.map((match) => {
-                    const home = match.home;
-                    const away = match.away;
-                    const selectedId = picks[match.id];
+                    const eff = effective[match.id] ?? { home: null, away: null };
+                    const home = eff.home;
+                    const away = eff.away;
+                    const rawSelectedId = picks[match.id];
+                    const selectedId =
+                      rawSelectedId === home?.id || rawSelectedId === away?.id
+                        ? rawSelectedId
+                        : undefined;
 
                     return (
                       <div key={match.id} className="card py-3">
@@ -162,7 +235,7 @@ export default function PickClient({ matches, existingPicks, existingTiebreaker 
 
                           {/* vs divider */}
                           <div className="text-chalk/20 font-mono text-xs min-w-[32px] text-center">
-                            {match.kickoff_utc
+                            {key === "round_of_32" && match.kickoff_utc
                               ? new Date(match.kickoff_utc).toLocaleDateString("en-US", {
                                   month: "short",
                                   day: "numeric",
