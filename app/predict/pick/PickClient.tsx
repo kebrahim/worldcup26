@@ -259,7 +259,7 @@ export default function PickClient({ matches, existingPicks, existingTiebreaker 
                             <span className="text-xl">{home?.flag_emoji ?? "🏳️"}</span>
                             <div>
                               <div className="font-bold text-sm">{home?.code ?? "TBD"}</div>
-                              <div className="text-xs text-chalk/40 hidden sm:block">
+                              <div className="text-xs text-chalk/40">
                                 {home?.name}
                               </div>
                             </div>
@@ -290,7 +290,7 @@ export default function PickClient({ matches, existingPicks, existingTiebreaker 
                           >
                             <div>
                               <div className="font-bold text-sm">{away?.code ?? "TBD"}</div>
-                              <div className="text-xs text-chalk/40 hidden sm:block">
+                              <div className="text-xs text-chalk/40">
                                 {away?.name}
                               </div>
                             </div>
