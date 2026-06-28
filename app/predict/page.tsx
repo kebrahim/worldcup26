@@ -153,6 +153,13 @@ export default async function PredictPage() {
     return (a.tiebreakerGuess ?? 999) - (b.tiebreakerGuess ?? 999);
   });
 
+  // Standard competition ranking: tied scores share a rank, and the next rank
+  // skips ahead (e.g. 1, 1, 3 — not 1, 1, 2).
+  const ranks: number[] = [];
+  leaderboard.forEach((entry, i) => {
+    ranks.push(i > 0 && entry.score === leaderboard[i - 1]!.score ? ranks[i - 1]! : i + 1);
+  });
+
   const userHasPicks = user ? participantIds.has(user.id) : false;
 
   // Commissioner-only: completion status across every registered profile, not
@@ -352,7 +359,7 @@ export default async function PredictPage() {
                       className={`border-b border-border/50 last:border-0 ${isMe ? "bg-gold/10" : ""}`}
                     >
                       <td className="px-4 py-2 font-mono text-chalk/40 text-center w-12">
-                        {i + 1}
+                        {ranks[i]}
                       </td>
                       <td className="px-4 py-2">
                         {picksRevealed ? (
