@@ -11,6 +11,12 @@ const ROUNDS: { key: string; label: string }[] = [
   { key: "final", label: "Final" },
 ];
 
+// Displayed alongside the main bracket, but derived from the semifinal losers
+// rather than slotting into the winner-advancement chain above.
+const THIRD_PLACE = { key: "third_place", label: "3rd Place Playoff" };
+
+const DISPLAY_ROUNDS = [...ROUNDS.slice(0, 4), THIRD_PLACE, ROUNDS[4]];
+
 type Team = { id: number; name: string; code: string; flag_emoji: string };
 
 type Match = {
@@ -54,7 +60,7 @@ export default function PickClient({ matches, existingPicks, existingTiebreaker 
   // Group real matches by round, sorted by id so bracket pairing (winner of slot 2i
   // plays winner of slot 2i+1 in the next round) is stable across renders.
   const sortedRounds: Record<string, Match[]> = {};
-  for (const { key } of ROUNDS) {
+  for (const { key } of DISPLAY_ROUNDS) {
     sortedRounds[key] = matches
       .filter((m) => m.stage === key)
       .slice()
@@ -112,9 +118,29 @@ export default function PickClient({ matches, existingPicks, existingTiebreaker 
     winners[m.id] = computeWinner(m, effective[m.id]);
   }
 
+  // The 3rd place playoff is contested by the two semifinal losers, not winners —
+  // derive its matchup from the same semifinal pairing the final uses.
+  function computeLoser(m: Match, eff: { home: Team | null; away: Team | null }): Team | null {
+    const winner = winners[m.id];
+    if (!winner) return null;
+    if (eff.home && eff.home.id !== winner.id) return eff.home;
+    if (eff.away && eff.away.id !== winner.id) return eff.away;
+    return null;
+  }
+
+  const semis = sortedRounds.semifinal;
+  (sortedRounds.third_place ?? []).forEach((m, idx) => {
+    const a = semis[idx * 2];
+    const b = semis[idx * 2 + 1];
+    effective[m.id] = {
+      home: a ? computeLoser(a, effective[a.id]) : null,
+      away: b ? computeLoser(b, effective[b.id]) : null,
+    };
+  });
+
   // Only picks that are still consistent with the current bracket state get saved.
   const validPicks: Record<number, number> = {};
-  for (const { key } of ROUNDS) {
+  for (const { key } of DISPLAY_ROUNDS) {
     for (const m of sortedRounds[key]) {
       const eff = effective[m.id];
       const pickedId = picks[m.id];
@@ -247,7 +273,7 @@ export default function PickClient({ matches, existingPicks, existingTiebreaker 
         )}
 
         <div className="flex flex-col gap-10">
-          {ROUNDS.map(({ key, label }) => {
+          {DISPLAY_ROUNDS.map(({ key, label }) => {
             const roundMatches = sortedRounds[key] ?? [];
             if (roundMatches.length === 0) return null;
             return (

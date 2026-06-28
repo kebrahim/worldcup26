@@ -12,6 +12,7 @@ const ROUND_POINTS: Record<string, number> = {
   round_of_16: 2,
   quarterfinal: 4,
   semifinal: 8,
+  third_place: 1,
   final: 16,
 };
 
@@ -20,6 +21,7 @@ const ROUNDS: { key: string; label: string }[] = [
   { key: "round_of_16", label: "Round of 16" },
   { key: "quarterfinal", label: "Quarterfinals" },
   { key: "semifinal", label: "Semifinals" },
+  { key: "third_place", label: "3rd Place Playoff" },
   { key: "final", label: "Final" },
 ];
 

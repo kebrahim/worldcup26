@@ -11,6 +11,7 @@ const ROUND_POINTS: Record<string, number> = {
   round_of_16: 2,
   quarterfinal: 4,
   semifinal: 8,
+  third_place: 1,
   final: 16,
 };
 
