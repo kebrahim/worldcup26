@@ -165,6 +165,9 @@ export default function PickClient({ matches, existingPicks, existingTiebreaker 
 
   const totalMatches = matches.length;
   const pickedCount = Object.keys(validPicks).length;
+  const tiebreakerMissing = tiebreaker === "";
+  const picksComplete = pickedCount === totalMatches;
+  const bracketComplete = picksComplete && !tiebreakerMissing;
 
   return (
     <main className="min-h-screen p-4 md:p-8">
@@ -216,9 +219,32 @@ export default function PickClient({ matches, existingPicks, existingTiebreaker 
           </div>
         )}
 
-        <p className="text-chalk/40 text-sm mb-6">
-          {pickedCount} of {totalMatches} matches picked
-        </p>
+        <div className="flex items-center gap-2 mb-6">
+          <p className="text-chalk/40 text-sm">
+            {pickedCount} of {totalMatches} matches picked
+          </p>
+          {!bracketComplete ? (
+            <span className="text-xs font-bold uppercase tracking-widest text-red-400 border border-red-500/40 rounded px-2 py-0.5">
+              Incomplete
+            </span>
+          ) : (
+            <span className="text-xs font-bold uppercase tracking-widest text-green-400 border border-green-500/40 rounded px-2 py-0.5">
+              Complete
+            </span>
+          )}
+        </div>
+
+        {!bracketComplete && (
+          <div className="card mb-6 bg-red-500/5 border-red-500/30">
+            <p className="text-red-400 text-sm font-bold mb-1">⚠ Your bracket isn&apos;t complete yet</p>
+            <ul className="text-chalk/60 text-sm list-disc list-inside">
+              {!picksComplete && (
+                <li>{totalMatches - pickedCount} match{totalMatches - pickedCount === 1 ? "" : "es"} still need a winner picked</li>
+              )}
+              {tiebreakerMissing && <li>Tiebreaker (total tournament goals) is required</li>}
+            </ul>
+          </div>
+        )}
 
         <div className="flex flex-col gap-10">
           {ROUNDS.map(({ key, label }) => {
@@ -314,12 +340,13 @@ export default function PickClient({ matches, existingPicks, existingTiebreaker 
         </div>
 
         {/* Tiebreaker */}
-        <div className="card mt-10">
+        <div className={`card mt-10 ${tiebreakerMissing ? "border-red-500/40" : ""}`}>
           <h2 className="text-xs uppercase tracking-widest text-chalk/40 font-mono mb-3">
-            Tiebreaker
+            Tiebreaker <span className="text-red-400">*required</span>
           </h2>
           <p className="text-chalk/60 text-sm mb-3">
-            Predict the total number of goals scored in the entire tournament.
+            Predict the total number of goals scored in the entire tournament. Your bracket is not
+            complete without this.
           </p>
           <input
             type="number"
@@ -333,8 +360,13 @@ export default function PickClient({ matches, existingPicks, existingTiebreaker 
               setDirty(true);
             }}
             placeholder="e.g. 142"
-            className="bg-surface border border-border rounded px-3 py-2 text-chalk font-mono w-32 focus:outline-none focus:border-gold"
+            className={`bg-surface border rounded px-3 py-2 text-chalk font-mono w-32 focus:outline-none focus:border-gold ${
+              tiebreakerMissing ? "border-red-500/50" : "border-border"
+            }`}
           />
+          {tiebreakerMissing && (
+            <p className="text-red-400 text-xs mt-2">⚠ Required — your bracket won&apos;t be complete until you enter a guess.</p>
+          )}
         </div>
 
         {/* Save button */}
@@ -348,9 +380,14 @@ export default function PickClient({ matches, existingPicks, existingTiebreaker 
             {saving ? "Saving…" : "Save Picks"}
           </button>
 
-          {saved && (
+          {saved && bracketComplete && (
             <p className="text-green-400 text-sm">
-              ✓ Picks saved!
+              ✓ Picks saved — your bracket is complete!
+            </p>
+          )}
+          {saved && !bracketComplete && (
+            <p className="text-gold/80 text-sm">
+              ✓ Saved, but your bracket is still incomplete — see above.
             </p>
           )}
           {error && <p className="text-red-400 text-sm">{error}</p>}
