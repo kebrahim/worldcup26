@@ -316,14 +316,14 @@ export default async function PredictPage() {
                           : "—"}
                       </td>
                       <td className="px-3 py-2 text-right font-mono text-chalk/50">
-                        {picksRevealed
+                        {picksRevealed || isMe
                           ? entry.championPick
                             ? `${entry.championPick.flag_emoji} ${entry.championPick.code}`
                             : "—"
                           : "🔒"}
                       </td>
                       <td className="px-3 py-2 text-right font-mono text-chalk/50 hidden sm:table-cell">
-                        {picksRevealed
+                        {picksRevealed || isMe
                           ? (entry.tiebreakerGuess ?? "—")
                           : "—"}
                       </td>
