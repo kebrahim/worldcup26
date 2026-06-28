@@ -53,6 +53,12 @@ export default async function PredictPage() {
   const now = new Date();
   const afterDeadline = now >= DEADLINE;
 
+  const { data: viewerProfile } = user
+    ? await admin.from("profiles").select("is_commissioner").eq("id", user.id).maybeSingle()
+    : { data: null };
+  const isCommissioner = viewerProfile?.is_commissioner ?? false;
+  const picksRevealed = afterDeadline || isCommissioner;
+
   const [{ data: profiles }, { data: picks }, { data: tiebreakers }] =
     await Promise.all([
       admin.from("profiles").select("id, display_name"),
@@ -206,10 +212,17 @@ export default async function PredictPage() {
         </div>
 
         {/* Before deadline notice */}
-        {!afterDeadline && (
+        {!afterDeadline && !isCommissioner && (
           <div className="card mb-6 bg-gold/5 border-gold/30">
             <p className="text-chalk/50 text-sm">
               🔒 Picks will be revealed after the deadline passes.
+            </p>
+          </div>
+        )}
+        {!afterDeadline && isCommissioner && (
+          <div className="card mb-6 bg-gold/5 border-gold/30">
+            <p className="text-chalk/50 text-sm">
+              🔓 Commissioner view — picks are visible to you before the deadline; other participants still see them locked.
             </p>
           </div>
         )}
@@ -255,7 +268,7 @@ export default async function PredictPage() {
                         {i + 1}
                       </td>
                       <td className="px-4 py-2">
-                        {afterDeadline ? (
+                        {picksRevealed ? (
                           <Link
                             href={`/predict/${entry.userId}`}
                             className="text-chalk hover:text-gold transition-colors font-bold"
@@ -283,14 +296,14 @@ export default async function PredictPage() {
                           : "—"}
                       </td>
                       <td className="px-3 py-2 text-right font-mono text-chalk/50">
-                        {afterDeadline
+                        {picksRevealed
                           ? entry.championPick
                             ? `${entry.championPick.flag_emoji} ${entry.championPick.code}`
                             : "—"
                           : "🔒"}
                       </td>
                       <td className="px-3 py-2 text-right font-mono text-chalk/50 hidden sm:table-cell">
-                        {afterDeadline
+                        {picksRevealed
                           ? (entry.tiebreakerGuess ?? "—")
                           : "—"}
                       </td>
@@ -302,8 +315,8 @@ export default async function PredictPage() {
           </div>
         )}
 
-        {/* View all brackets after deadline */}
-        {afterDeadline && leaderboard.length > 0 && (
+        {/* View all brackets after deadline (or always, for the commissioner) */}
+        {picksRevealed && leaderboard.length > 0 && (
           <div className="card">
             <h2 className="text-xs uppercase tracking-widest text-chalk/40 font-mono mb-3">
               All Brackets

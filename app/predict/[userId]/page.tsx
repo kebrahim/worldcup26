@@ -57,12 +57,19 @@ export default async function UserBracketPage({
   const afterDeadline = now >= DEADLINE;
   const isOwnBracket = user.id === userId;
 
-  // Only allow viewing other people's brackets after deadline
-  if (!isOwnBracket && !afterDeadline) {
+  const admin = createAdminClient();
+
+  const { data: viewerProfile } = await admin
+    .from("profiles")
+    .select("is_commissioner")
+    .eq("id", user.id)
+    .maybeSingle();
+  const isCommissioner = viewerProfile?.is_commissioner ?? false;
+
+  // Only allow viewing other people's brackets after the deadline, unless you're the commissioner
+  if (!isOwnBracket && !afterDeadline && !isCommissioner) {
     redirect("/predict");
   }
-
-  const admin = createAdminClient();
 
   const [{ data: profile }, { data: rawPicks }, { data: tiebreakerRow }] =
     await Promise.all([
@@ -161,6 +168,9 @@ export default async function UserBracketPage({
         </h1>
         {isOwnBracket && (
           <p className="text-chalk/40 text-sm mb-2">Your bracket</p>
+        )}
+        {!isOwnBracket && !afterDeadline && isCommissioner && (
+          <p className="text-gold/60 text-sm mb-2">🔓 Viewing as commissioner — picks are still locked for other participants.</p>
         )}
 
         {/* Sub-nav */}
