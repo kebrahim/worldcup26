@@ -53,9 +53,29 @@ export default async function PredictPage() {
   const now = new Date();
   const afterDeadline = now >= DEADLINE;
 
-  const { data: viewerProfile } = user
-    ? await admin.from("profiles").select("is_commissioner").eq("id", user.id).maybeSingle()
+  let { data: viewerProfile } = user
+    ? await admin.from("profiles").select("display_name, is_commissioner").eq("id", user.id).maybeSingle()
     : { data: null };
+
+  // Safety net: the on_auth_user_created trigger should always create a profile on
+  // signup, but if it ever doesn't (e.g. a transient signup glitch), self-heal here
+  // rather than leaving the user stuck without a profile.
+  if (user && !viewerProfile) {
+    const displayName =
+      (user.user_metadata?.display_name as string | undefined) ??
+      user.email?.split("@")[0] ??
+      "Anonymous";
+    const { data: created } = await admin
+      .from("profiles")
+      .upsert(
+        { id: user.id, display_name: displayName, email: user.email ?? "" },
+        { onConflict: "id" }
+      )
+      .select("display_name, is_commissioner")
+      .single();
+    viewerProfile = created;
+  }
+
   const isCommissioner = viewerProfile?.is_commissioner ?? false;
   const picksRevealed = afterDeadline || isCommissioner;
 
