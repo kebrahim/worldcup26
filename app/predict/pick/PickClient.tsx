@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 
 const ROUNDS: { key: string; label: string }[] = [
@@ -39,6 +39,17 @@ export default function PickClient({ matches, existingPicks, existingTiebreaker 
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [dirty, setDirty] = useState(false);
+
+  useEffect(() => {
+    if (!dirty) return;
+    const handler = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = "";
+    };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [dirty]);
 
   // Group real matches by round, sorted by id so bracket pairing (winner of slot 2i
   // plays winner of slot 2i+1 in the next round) is stable across renders.
@@ -117,6 +128,7 @@ export default function PickClient({ matches, existingPicks, existingTiebreaker 
     setPicks((prev) => ({ ...prev, [matchId]: teamId }));
     setSaved(false);
     setError(null);
+    setDirty(true);
   }
 
   async function handleSave() {
@@ -142,6 +154,7 @@ export default function PickClient({ matches, existingPicks, existingTiebreaker 
         setError(data.error ?? "Failed to save picks.");
       } else {
         setSaved(true);
+        setDirty(false);
       }
     } catch {
       setError("Network error — please try again.");
@@ -156,7 +169,15 @@ export default function PickClient({ matches, existingPicks, existingTiebreaker 
   return (
     <main className="min-h-screen p-4 md:p-8">
       <div className="max-w-4xl mx-auto">
-        <a href="/predict" className="text-chalk/40 hover:text-chalk text-sm mb-6 inline-block">
+        <a
+          href="/predict"
+          onClick={(e) => {
+            if (dirty && !window.confirm("You have unsaved picks. Leave without saving?")) {
+              e.preventDefault();
+            }
+          }}
+          className="text-chalk/40 hover:text-chalk text-sm mb-6 inline-block"
+        >
           ← Leaderboard
         </a>
         <h1 className="text-3xl font-bold text-gold font-display uppercase tracking-wide mb-2">
@@ -167,6 +188,11 @@ export default function PickClient({ matches, existingPicks, existingTiebreaker 
         <div className="flex gap-4 mb-8 border-b border-border pb-3">
           <Link
             href="/predict"
+            onClick={(e) => {
+              if (dirty && !window.confirm("You have unsaved picks. Leave without saving?")) {
+                e.preventDefault();
+              }
+            }}
             className="text-chalk/40 hover:text-chalk text-sm pb-3 -mb-3"
           >
             Leaderboard
@@ -183,6 +209,12 @@ export default function PickClient({ matches, existingPicks, existingTiebreaker 
             rounds. Click <strong>Save Picks</strong> once you&apos;re happy with your full bracket.
           </p>
         </div>
+
+        {dirty && (
+          <div className="card mb-6 bg-red-500/5 border-red-500/30">
+            <p className="text-red-400 text-sm font-bold">⚠ You have unsaved changes — click Save Picks below before leaving this page.</p>
+          </div>
+        )}
 
         <p className="text-chalk/40 text-sm mb-6">
           {pickedCount} of {totalMatches} matches picked
@@ -298,6 +330,7 @@ export default function PickClient({ matches, existingPicks, existingTiebreaker 
               setTiebreaker(e.target.value);
               setSaved(false);
               setError(null);
+              setDirty(true);
             }}
             placeholder="e.g. 142"
             className="bg-surface border border-border rounded px-3 py-2 text-chalk font-mono w-32 focus:outline-none focus:border-gold"
