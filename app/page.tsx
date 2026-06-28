@@ -11,10 +11,29 @@ export default async function Home() {
 
   const admin = createAdminClient();
 
-  const [{ data: profile }, { count: draftPickCount }] = await Promise.all([
-    supabase.from("profiles").select("display_name, is_commissioner").eq("id", user.id).single(),
+  let [{ data: profile }, { count: draftPickCount }] = await Promise.all([
+    supabase.from("profiles").select("display_name, is_commissioner").eq("id", user.id).maybeSingle(),
     admin.from("draft_picks").select("*", { count: "exact", head: true }).eq("user_id", user.id),
   ]);
+
+  // Safety net: the on_auth_user_created trigger should always create a profile on
+  // signup, but if it ever doesn't (e.g. a transient signup glitch), self-heal here
+  // rather than leaving the user stuck without a profile.
+  if (!profile) {
+    const displayName =
+      (user.user_metadata?.display_name as string | undefined) ??
+      user.email?.split("@")[0] ??
+      "Anonymous";
+    const { data: created } = await admin
+      .from("profiles")
+      .upsert(
+        { id: user.id, display_name: displayName, email: user.email ?? "" },
+        { onConflict: "id" }
+      )
+      .select("display_name, is_commissioner")
+      .single();
+    profile = created;
+  }
 
   if (!draftPickCount) redirect("/predict");
 
