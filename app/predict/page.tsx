@@ -80,7 +80,7 @@ export default async function PredictPage() {
   const isCommissioner = viewerProfile?.is_commissioner ?? false;
   const picksRevealed = afterDeadline || isCommissioner;
 
-  const [{ data: profiles }, { data: picks }, { data: tiebreakers }] =
+  const [{ data: profiles }, { data: picks }, { data: tiebreakers }, { count: expectedPickCount }] =
     await Promise.all([
       admin.from("profiles").select("id, display_name"),
       admin
@@ -89,6 +89,7 @@ export default async function PredictPage() {
           "user_id, match_id, predicted_winner_team_id, match:match_id(id, stage, winner_team_id, status), team:predicted_winner_team_id(id, name, code, flag_emoji)"
         ),
       admin.from("bracket_tiebreaker").select("user_id, predicted_total_goals"),
+      admin.from("matches").select("*", { count: "exact", head: true }).neq("stage", "group"),
     ]);
 
   // Build leaderboard
@@ -153,6 +154,26 @@ export default async function PredictPage() {
   });
 
   const userHasPicks = user ? participantIds.has(user.id) : false;
+
+  // Commissioner-only: completion status across every registered profile, not
+  // just those who've made at least one pick, so missing participants show too.
+  const totalExpectedPicks = expectedPickCount ?? 0;
+  const pickStatus = ((profiles as unknown as Profile[]) ?? [])
+    .map((p) => {
+      const picksMade = scoresByUser[p.id]?.total ?? 0;
+      const hasTiebreaker = tiebreakerMap[p.id] != null;
+      return {
+        userId: p.id,
+        displayName: p.display_name ?? "Anonymous",
+        picksMade,
+        hasTiebreaker,
+        complete: picksMade === totalExpectedPicks && hasTiebreaker,
+      };
+    })
+    .sort((a, b) => {
+      if (a.complete !== b.complete) return a.complete ? 1 : -1;
+      return a.displayName.localeCompare(b.displayName);
+    });
 
   return (
     <main className="min-h-screen p-4 md:p-8">
@@ -245,6 +266,51 @@ export default async function PredictPage() {
             <p className="text-chalk/50 text-sm">
               🔓 Commissioner view — picks are visible to you before the deadline; other participants still see them locked.
             </p>
+          </div>
+        )}
+
+        {/* Commissioner-only: who has/hasn't finished their picks */}
+        {isCommissioner && (
+          <div className="card p-0 overflow-hidden mb-8">
+            <div className="px-4 py-2 border-b border-border bg-surface/50">
+              <span className="text-gold font-bold font-mono text-sm uppercase tracking-widest">
+                Pick Completion (Commissioner)
+              </span>
+            </div>
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-chalk/30 text-xs font-mono border-b border-border">
+                  <th className="text-left px-4 py-2 font-normal">Name</th>
+                  <th className="px-3 py-2 font-normal text-right">Picks</th>
+                  <th className="px-3 py-2 font-normal text-right">Tiebreaker</th>
+                  <th className="px-3 py-2 font-normal text-right">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {pickStatus.map((p) => (
+                  <tr key={p.userId} className="border-b border-border/50 last:border-0">
+                    <td className="px-4 py-2 text-chalk">{p.displayName}</td>
+                    <td className="px-3 py-2 text-right font-mono text-chalk/50">
+                      {p.picksMade}/{totalExpectedPicks}
+                    </td>
+                    <td className="px-3 py-2 text-right font-mono text-chalk/50">
+                      {p.hasTiebreaker ? "✓" : "✗"}
+                    </td>
+                    <td className="px-3 py-2 text-right">
+                      {p.complete ? (
+                        <span className="text-xs font-bold uppercase tracking-widest text-green-400 border border-green-500/40 rounded px-2 py-0.5">
+                          Complete
+                        </span>
+                      ) : (
+                        <span className="text-xs font-bold uppercase tracking-widest text-red-400 border border-red-500/40 rounded px-2 py-0.5">
+                          Incomplete
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
 
