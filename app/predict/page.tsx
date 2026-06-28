@@ -160,19 +160,27 @@ export default async function PredictPage() {
     })
   );
 
+  const tiebreakerDistance = (entry: LeaderboardEntry) =>
+    entry.tiebreakerGuess != null ? Math.abs(entry.tiebreakerGuess - actualTotalGoals) : Infinity;
+
   leaderboard.sort((a, b) => {
     if (b.score !== a.score) return b.score - a.score;
     // Tiebreaker: closest guess to the actual tournament total goals wins.
-    const aDist = a.tiebreakerGuess != null ? Math.abs(a.tiebreakerGuess - actualTotalGoals) : Infinity;
-    const bDist = b.tiebreakerGuess != null ? Math.abs(b.tiebreakerGuess - actualTotalGoals) : Infinity;
-    return aDist - bDist;
+    return tiebreakerDistance(a) - tiebreakerDistance(b);
   });
 
   // Standard competition ranking: tied scores share a rank, and the next rank
-  // skips ahead (e.g. 1, 1, 3 — not 1, 1, 2).
+  // skips ahead (e.g. 1, 1, 3 — not 1, 1, 2). Once the tournament is over, the
+  // tiebreaker (closest guess to actual goals) is used to actually separate
+  // tied scores instead of leaving them tied.
   const ranks: number[] = [];
   leaderboard.forEach((entry, i) => {
-    ranks.push(i > 0 && entry.score === leaderboard[i - 1]!.score ? ranks[i - 1]! : i + 1);
+    const prev = leaderboard[i - 1];
+    const tied =
+      i > 0 &&
+      entry.score === prev!.score &&
+      (!tournamentComplete || tiebreakerDistance(entry) === tiebreakerDistance(prev!));
+    ranks.push(tied ? ranks[i - 1]! : i + 1);
   });
 
   const userHasPicks = user ? participantIds.has(user.id) : false;
