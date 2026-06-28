@@ -11,10 +11,11 @@ export default async function Home() {
 
   const admin = createAdminClient();
 
-  let [{ data: profile }, { count: draftPickCount }] = await Promise.all([
+  const [{ data: profileData }, { count: draftPickCount }] = await Promise.all([
     supabase.from("profiles").select("display_name, is_commissioner").eq("id", user.id).maybeSingle(),
     admin.from("draft_picks").select("*", { count: "exact", head: true }).eq("user_id", user.id),
   ]);
+  let profile = profileData;
 
   // Safety net: the on_auth_user_created trigger should always create a profile on
   // signup, but if it ever doesn't (e.g. a transient signup glitch), self-heal here
