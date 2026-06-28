@@ -16,6 +16,8 @@ const ROUND_POINTS: Record<string, number> = {
 
 type Profile = { id: string; display_name: string | null };
 
+type Team = { id: number; name: string; code: string; flag_emoji: string };
+
 type BracketPick = {
   user_id: string;
   match_id: number;
@@ -26,6 +28,7 @@ type BracketPick = {
     winner_team_id: number | null;
     status: string;
   } | null;
+  team: Team | Team[] | null;
 };
 
 type Tiebreaker = { user_id: string; predicted_total_goals: number };
@@ -37,6 +40,7 @@ type LeaderboardEntry = {
   correctPicks: number;
   totalPicks: number;
   tiebreakerGuess: number | null;
+  championPick: Team | null;
 };
 
 export default async function PredictPage() {
@@ -55,7 +59,7 @@ export default async function PredictPage() {
       admin
         .from("bracket_picks")
         .select(
-          "user_id, match_id, predicted_winner_team_id, match:match_id(id, stage, winner_team_id, status)"
+          "user_id, match_id, predicted_winner_team_id, match:match_id(id, stage, winner_team_id, status), team:predicted_winner_team_id(id, name, code, flag_emoji)"
         ),
       admin.from("bracket_tiebreaker").select("user_id, predicted_total_goals"),
     ]);
@@ -75,6 +79,7 @@ export default async function PredictPage() {
     string,
     { score: number; correct: number; total: number }
   > = {};
+  const championByUser: Record<string, Team> = {};
   for (const pick of (picks as unknown as BracketPick[]) ?? []) {
     if (!scoresByUser[pick.user_id]) {
       scoresByUser[pick.user_id] = { score: 0, correct: 0, total: 0 };
@@ -89,6 +94,10 @@ export default async function PredictPage() {
         entry.score += pts;
         entry.correct++;
       }
+    }
+    if (match.stage === "final") {
+      const team = Array.isArray(pick.team) ? pick.team[0] : pick.team;
+      if (team) championByUser[pick.user_id] = team;
     }
   }
 
@@ -106,6 +115,7 @@ export default async function PredictPage() {
       correctPicks: scoresByUser[uid]?.correct ?? 0,
       totalPicks: scoresByUser[uid]?.total ?? 0,
       tiebreakerGuess: tiebreakerMap[uid] ?? null,
+      championPick: championByUser[uid] ?? null,
     })
   );
 
@@ -225,6 +235,9 @@ export default async function PredictPage() {
                   <th className="px-3 py-2 font-normal text-right hidden sm:table-cell">
                     Correct
                   </th>
+                  <th className="px-3 py-2 font-normal text-right">
+                    Champion Pick
+                  </th>
                   <th className="px-3 py-2 font-normal text-right hidden sm:table-cell">
                     Tiebreaker
                   </th>
@@ -268,6 +281,13 @@ export default async function PredictPage() {
                         {afterDeadline
                           ? `${entry.correctPicks}/${entry.totalPicks}`
                           : "—"}
+                      </td>
+                      <td className="px-3 py-2 text-right font-mono text-chalk/50">
+                        {afterDeadline
+                          ? entry.championPick
+                            ? `${entry.championPick.flag_emoji} ${entry.championPick.code}`
+                            : "—"
+                          : "🔒"}
                       </td>
                       <td className="px-3 py-2 text-right font-mono text-chalk/50 hidden sm:table-cell">
                         {afterDeadline
