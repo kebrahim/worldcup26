@@ -80,7 +80,7 @@ export default async function PredictPage() {
   const isCommissioner = viewerProfile?.is_commissioner ?? false;
   const picksRevealed = afterDeadline || isCommissioner;
 
-  const [{ data: profiles }, { data: picks }, { data: tiebreakers }, { count: expectedPickCount }] =
+  const [{ data: profiles }, { data: picks }, { data: tiebreakers }, { count: expectedPickCount }, { data: allMatches }] =
     await Promise.all([
       admin.from("profiles").select("id, display_name"),
       admin
@@ -90,7 +90,20 @@ export default async function PredictPage() {
         ),
       admin.from("bracket_tiebreaker").select("user_id, predicted_total_goals"),
       admin.from("matches").select("*", { count: "exact", head: true }).neq("stage", "group"),
+      admin.from("matches").select("home_score, away_score, status"),
     ]);
+
+  // Tournament total goals for the tiebreaker — regulation + extra time only,
+  // penalty shootout goals (home_score_pen/away_score_pen) are excluded. Only
+  // counts completed matches, so this climbs toward the final total as the
+  // tournament progresses.
+  type GoalsRow = { home_score: number | null; away_score: number | null; status: string };
+  const tournamentMatches = (allMatches as GoalsRow[]) ?? [];
+  const actualTotalGoals = tournamentMatches
+    .filter((m) => m.status === "completed")
+    .reduce((sum, m) => sum + (m.home_score ?? 0) + (m.away_score ?? 0), 0);
+  const tournamentComplete =
+    tournamentMatches.length > 0 && tournamentMatches.every((m) => m.status === "completed");
 
   // Build leaderboard
   const profileMap: Record<string, string> = {};
@@ -149,8 +162,10 @@ export default async function PredictPage() {
 
   leaderboard.sort((a, b) => {
     if (b.score !== a.score) return b.score - a.score;
-    // Tiebreaker: closer to some reasonable number — just sort by guess ascending as secondary
-    return (a.tiebreakerGuess ?? 999) - (b.tiebreakerGuess ?? 999);
+    // Tiebreaker: closest guess to the actual tournament total goals wins.
+    const aDist = a.tiebreakerGuess != null ? Math.abs(a.tiebreakerGuess - actualTotalGoals) : Infinity;
+    const bDist = b.tiebreakerGuess != null ? Math.abs(b.tiebreakerGuess - actualTotalGoals) : Infinity;
+    return aDist - bDist;
   });
 
   // Standard competition ranking: tied scores share a rank, and the next rank
@@ -320,6 +335,17 @@ export default async function PredictPage() {
             </table>
           </div>
         )}
+
+        {/* Actual tournament goals, for tiebreaker transparency */}
+        <div className="card mb-6 bg-surface/50">
+          <p className="text-chalk/50 text-sm">
+            {tournamentComplete ? (
+              <>Final tournament total: <span className="text-gold font-mono font-bold">{actualTotalGoals}</span> goals (regulation + extra time, excludes penalty shootouts).</>
+            ) : (
+              <>Tournament goals so far: <span className="text-gold font-mono font-bold">{actualTotalGoals}</span> (regulation + extra time, excludes penalty shootouts) — the tiebreaker is decided by the closest guess once the tournament ends.</>
+            )}
+          </p>
+        </div>
 
         {/* Leaderboard */}
         {leaderboard.length === 0 ? (
