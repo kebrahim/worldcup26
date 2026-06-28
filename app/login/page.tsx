@@ -24,7 +24,7 @@ function LoginForm() {
     setLoading(true);
 
     if (mode === "signup") {
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -34,6 +34,10 @@ function LoginForm() {
       });
       if (error) {
         setError(error.message);
+      } else if (data.session) {
+        // Email confirmation is disabled, so signUp already returns an active session.
+        router.push(next);
+        router.refresh();
       } else {
         setMessage("Check your email for a confirmation link.");
       }
