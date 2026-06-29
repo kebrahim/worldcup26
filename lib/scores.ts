@@ -124,13 +124,25 @@ export async function syncScores(): Promise<{ error?: string; matchesUpserted?: 
 }
 
 async function recalculateContestScores(admin: ReturnType<typeof createAdminClient>) {
-  const { data: players } = await admin.from("profiles").select("id");
-  if (!players) return;
+  const { data: allPlayers } = await admin.from("profiles").select("id");
+  if (!allPlayers) return;
 
   const { data: picks } = await admin
     .from("draft_picks")
     .select("user_id, team_id, draft_sessions!inner(stage)")
     .eq("draft_sessions.stage", "group_stage");
+
+  // Only score actual draft participants — predict-only signups shouldn't be ranked here.
+  const { data: allDraftPicks } = await admin.from("draft_picks").select("user_id");
+  const draftedUserIds = new Set((allDraftPicks ?? []).map((p) => p.user_id));
+  const players = allPlayers.filter((p) => draftedUserIds.has(p.id));
+  if (players.length === 0) return;
+
+  // Clean up any stale rows from predict-only users that may have been scored previously.
+  const staleUserIds = allPlayers.filter((p) => !draftedUserIds.has(p.id)).map((p) => p.id);
+  if (staleUserIds.length > 0) {
+    await admin.from("contest_scores").delete().in("user_id", staleUserIds);
+  }
 
   const { data: groupMatches } = await admin
     .from("matches")

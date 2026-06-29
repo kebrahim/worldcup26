@@ -46,6 +46,7 @@ export default async function LeaderboardPage() {
 
   const byContest: Record<string, Array<{ user_id: string; score: number; rank: number | null; contest_points: number }>> = {};
   for (const cs of contestScores ?? []) {
+    if (!draftedUserIds.has(cs.user_id)) continue;
     if (!byContest[cs.contest]) byContest[cs.contest] = [];
     byContest[cs.contest].push(cs);
   }
