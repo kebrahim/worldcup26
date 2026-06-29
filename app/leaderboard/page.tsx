@@ -6,11 +6,11 @@ import ContestBreakdown from "./ContestBreakdown";
 export const revalidate = 60;
 
 const CONTESTS = [
+  { key: "knockout_bracket", label: "Knockout Bracket", desc: "Points earned per round won", higher: true },
+  { key: "knockout_goals", label: "Knockout Goals", desc: "Total goals scored in knockout stage", higher: true },
   { key: "group_goals_scored", label: "Group Goals Scored", desc: "Total goals scored in group stage", higher: true },
   { key: "group_defense", label: "Group Defense", desc: "Total goals conceded in group stage", higher: false },
   { key: "group_advancements", label: "Group Advancements", desc: "Teams that advanced to knockout", higher: true },
-  { key: "knockout_bracket", label: "Knockout Bracket", desc: "Points earned per round won", higher: true },
-  { key: "knockout_goals", label: "Knockout Goals", desc: "Total goals scored in knockout stage", higher: true },
 ];
 
 export default async function LeaderboardPage() {
