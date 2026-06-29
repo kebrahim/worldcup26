@@ -1,6 +1,7 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
+import ContestBreakdown from "./ContestBreakdown";
 
 export const revalidate = 60;
 
@@ -84,53 +85,13 @@ export default async function LeaderboardPage() {
           </div>
         </div>
 
-        <h2 className="text-sm uppercase tracking-widest text-chalk/50 mb-4">Contest Breakdown</h2>
-        <div className="flex flex-col gap-4">
-          {CONTESTS.map((contest) => {
-            const rows = byContest[contest.key] ?? [];
-            const allZero = rows.every((r) => r.contest_points === 0);
-            return (
-              <details key={contest.key} className="card group">
-                <summary className="cursor-pointer flex items-center justify-between list-none">
-                  <div>
-                    <span className="text-chalk font-bold">{contest.label}</span>
-                    <span className="text-chalk/40 text-xs ml-2">{contest.desc}</span>
-                  </div>
-                  <span className="text-chalk/30 text-xs group-open:rotate-180 transition-transform">▼</span>
-                </summary>
-                <div className="mt-4 flex flex-col gap-2">
-                  {rows.length === 0 ? (
-                    <p className="text-chalk/30 text-sm">No data yet.</p>
-                  ) : allZero ? (
-                    <p className="text-chalk/30 text-sm">No points awarded yet — scores are all zero.</p>
-                  ) : (
-                    rows.map((row, i) => (
-                      <div
-                        key={row.user_id}
-                        className={`flex items-center justify-between text-sm ${row.user_id === user?.id ? "text-gold" : "text-chalk"}`}
-                      >
-                        <div className="flex items-center gap-3">
-                          <span className={`font-mono w-5 ${rankColors[i] ?? "text-chalk/30"}`}>
-                            {row.rank != null ? `#${row.rank}` : "—"}
-                          </span>
-                          <Link href={`/teams?player=${row.user_id}`} className="hover:text-gold transition-colors">
-                            {playerMap[row.user_id] ?? "—"}{row.user_id === user?.id && " (you)"}
-                          </Link>
-                        </div>
-                        <div className="flex items-center gap-4">
-                          <span className="text-chalk/50 font-mono">{row.score}</span>
-                          <span className={`font-mono font-bold ${rankColors[i] ?? "text-chalk/30"}`}>
-                            +{row.contest_points}
-                          </span>
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </details>
-            );
-          })}
-        </div>
+        <ContestBreakdown
+          contests={CONTESTS}
+          byContest={byContest}
+          playerMap={playerMap}
+          myUserId={user?.id}
+          rankColors={rankColors}
+        />
       </div>
     </main>
   );
