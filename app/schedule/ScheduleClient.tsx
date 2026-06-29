@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 
 const STAGE_LABELS: Record<string, string> = {
   group: "Group Stage",
@@ -42,6 +42,29 @@ export default function ScheduleClient({ matches, myTeamIds: myTeamIdsArr, teamO
     return map;
   }, [matches]);
 
+  // Find the date group to scroll to: the first one containing today's match, or
+  // otherwise the first upcoming date group.
+  const scrollTargetDate = useMemo(() => {
+    const todayKey = new Date().toDateString();
+    let firstUpcoming: string | null = null;
+    for (const [date, dayMatches] of Object.entries(byDate)) {
+      const firstKickoff = dayMatches.find((m) => m.kickoff_utc)?.kickoff_utc;
+      if (!firstKickoff) continue;
+      const matchDate = new Date(firstKickoff);
+      if (matchDate.toDateString() === todayKey) return date;
+      if (firstUpcoming === null && matchDate.getTime() >= Date.now()) firstUpcoming = date;
+    }
+    return firstUpcoming;
+  }, [byDate]);
+
+  const dateRefs = useRef<Record<string, HTMLDivElement | null>>({});
+
+  useEffect(() => {
+    if (!scrollTargetDate) return;
+    const el = dateRefs.current[scrollTargetDate];
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [scrollTargetDate]);
+
   if (Object.keys(byDate).length === 0) {
     return (
       <div className="card">
@@ -53,7 +76,7 @@ export default function ScheduleClient({ matches, myTeamIds: myTeamIdsArr, teamO
   return (
     <>
       {Object.entries(byDate).map(([date, dayMatches]) => (
-        <div key={date} className="mb-8">
+        <div key={date} ref={(el) => { dateRefs.current[date] = el; }} className="mb-8">
           <h2 className="text-xs uppercase tracking-widest text-chalk/40 mb-3 font-mono">{date}</h2>
           <div className="flex flex-col gap-2">
             {dayMatches.map((match) => {
