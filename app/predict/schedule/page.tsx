@@ -32,7 +32,6 @@ type PickRow = {
   user_id: string;
   match_id: number;
   predicted_winner_team_id: number;
-  profiles: { display_name: string | null } | { display_name: string | null }[] | null;
   team: Team | Team[] | null;
 };
 
@@ -57,7 +56,7 @@ export default async function PredictSchedulePage() {
   const isCommissioner = viewerProfile?.is_commissioner ?? false;
   const picksRevealed = afterDeadline || isCommissioner;
 
-  const [{ data: rawMatches }, { data: rawPicks }] = await Promise.all([
+  const [{ data: rawMatches }, { data: rawPicks }, { data: profiles }] = await Promise.all([
     admin
       .from("matches")
       .select(
@@ -69,20 +68,27 @@ export default async function PredictSchedulePage() {
       ? admin
           .from("bracket_picks")
           .select(
-            "user_id, match_id, predicted_winner_team_id, profiles(display_name), team:predicted_winner_team_id(id, name, code, flag_emoji)"
+            "user_id, match_id, predicted_winner_team_id, team:predicted_winner_team_id(id, name, code, flag_emoji)"
           )
       : Promise.resolve({ data: [] as PickRow[] }),
+    picksRevealed
+      ? admin.from("profiles").select("id, display_name")
+      : Promise.resolve({ data: [] as { id: string; display_name: string | null }[] }),
   ]);
 
   const matches = (rawMatches ?? []) as unknown as Match[];
 
+  const profileMap: Record<string, string> = {};
+  for (const p of profiles ?? []) {
+    profileMap[p.id] = p.display_name ?? "Anonymous";
+  }
+
   const picksByMatch: Record<number, { displayName: string; team: Team | null; isMe: boolean }[]> = {};
   for (const p of (rawPicks ?? []) as unknown as PickRow[]) {
-    const profile = one(p.profiles);
     const team = one(p.team);
     if (!picksByMatch[p.match_id]) picksByMatch[p.match_id] = [];
     picksByMatch[p.match_id]!.push({
-      displayName: profile?.display_name ?? "Anonymous",
+      displayName: profileMap[p.user_id] ?? "Anonymous",
       team,
       isMe: p.user_id === user.id,
     });
