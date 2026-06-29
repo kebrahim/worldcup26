@@ -188,6 +188,12 @@ export default async function UserBracketPage({
               My Bracket
             </span>
           )}
+          <Link
+            href="/predict/schedule"
+            className="text-chalk/40 hover:text-chalk text-sm pb-3 -mb-3"
+          >
+            Schedule
+          </Link>
         </div>
 
         {/* Score card */}

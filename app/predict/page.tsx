@@ -226,6 +226,12 @@ export default async function PredictPage() {
           >
             My Bracket
           </Link>
+          <Link
+            href="/predict/schedule"
+            className="text-chalk/40 hover:text-chalk text-sm pb-3 -mb-3"
+          >
+            Schedule
+          </Link>
         </div>
 
         {/* Auth / action banner */}

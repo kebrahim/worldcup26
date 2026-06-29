@@ -229,6 +229,17 @@ export default function PickClient({ matches, existingPicks, existingTiebreaker 
           <span className="text-gold font-bold text-sm border-b-2 border-gold pb-3 -mb-3">
             My Bracket
           </span>
+          <Link
+            href="/predict/schedule"
+            onClick={(e) => {
+              if (dirty && !window.confirm("You have unsaved picks. Leave without saving?")) {
+                e.preventDefault();
+              }
+            }}
+            className="text-chalk/40 hover:text-chalk text-sm pb-3 -mb-3"
+          >
+            Schedule
+          </Link>
         </div>
 
         <div className="card mb-6 bg-gold/5 border-gold/30">
