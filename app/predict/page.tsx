@@ -299,62 +299,6 @@ export default async function PredictPage() {
           </div>
         )}
 
-        {/* Commissioner-only: who has/hasn't finished their picks */}
-        {isCommissioner && (
-          <div className="card p-0 overflow-hidden mb-8">
-            <div className="px-4 py-2 border-b border-border bg-surface/50">
-              <span className="text-gold font-bold font-mono text-sm uppercase tracking-widest">
-                Pick Completion (Commissioner)
-              </span>
-            </div>
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="text-chalk/30 text-xs font-mono border-b border-border">
-                  <th className="text-left px-4 py-2 font-normal">Name</th>
-                  <th className="px-3 py-2 font-normal text-right">Picks</th>
-                  <th className="px-3 py-2 font-normal text-right">Tiebreaker</th>
-                  <th className="px-3 py-2 font-normal text-right">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {pickStatus.map((p) => (
-                  <tr key={p.userId} className="border-b border-border/50 last:border-0">
-                    <td className="px-4 py-2 text-chalk">{p.displayName}</td>
-                    <td className="px-3 py-2 text-right font-mono text-chalk/50">
-                      {p.picksMade}/{totalExpectedPicks}
-                    </td>
-                    <td className="px-3 py-2 text-right font-mono text-chalk/50">
-                      {p.hasTiebreaker ? "✓" : "✗"}
-                    </td>
-                    <td className="px-3 py-2 text-right">
-                      {p.complete ? (
-                        <span className="text-xs font-bold uppercase tracking-widest text-green-400 border border-green-500/40 rounded px-2 py-0.5">
-                          Complete
-                        </span>
-                      ) : (
-                        <span className="text-xs font-bold uppercase tracking-widest text-red-400 border border-red-500/40 rounded px-2 py-0.5">
-                          Incomplete
-                        </span>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-
-        {/* Actual tournament goals, for tiebreaker transparency */}
-        <div className="card mb-6 bg-surface/50">
-          <p className="text-chalk/50 text-sm">
-            {tournamentComplete ? (
-              <>Final knockout-stage total: <span className="text-gold font-mono font-bold">{actualTotalGoals}</span> goals (knockout stage only, regulation + extra time, excludes penalty shootouts).</>
-            ) : (
-              <>Knockout-stage goals so far: <span className="text-gold font-mono font-bold">{actualTotalGoals}</span> (knockout stage only, regulation + extra time, excludes penalty shootouts) — the tiebreaker is decided by the closest guess once the tournament ends.</>
-            )}
-          </p>
-        </div>
-
         {/* Leaderboard */}
         {leaderboard.length === 0 ? (
           <div className="card">
@@ -443,28 +387,59 @@ export default async function PredictPage() {
           </div>
         )}
 
-        {/* View all brackets after deadline (or always, for the commissioner) */}
-        {picksRevealed && leaderboard.length > 0 && (
-          <div className="card">
-            <h2 className="text-xs uppercase tracking-widest text-chalk/40 font-mono mb-3">
-              All Brackets
-            </h2>
-            <div className="flex flex-col gap-1">
-              {leaderboard.map((entry) => (
-                <Link
-                  key={entry.userId}
-                  href={`/predict/${entry.userId}`}
-                  className="flex items-center justify-between py-2 px-1 hover:bg-white/5 rounded transition-colors"
-                >
-                  <span className="text-chalk hover:text-gold transition-colors">
-                    {entry.displayName}
-                  </span>
-                  <span className="text-chalk/40 font-mono text-sm">
-                    {entry.score} pts
-                  </span>
-                </Link>
-              ))}
+        {/* Actual tournament goals, for tiebreaker transparency */}
+        <div className="card mb-6 bg-surface/50">
+          <p className="text-chalk/50 text-sm">
+            {tournamentComplete ? (
+              <>Final knockout-stage total: <span className="text-gold font-mono font-bold">{actualTotalGoals}</span> goals (knockout stage only, regulation + extra time, excludes penalty shootouts).</>
+            ) : (
+              <>Knockout-stage goals so far: <span className="text-gold font-mono font-bold">{actualTotalGoals}</span> (knockout stage only, regulation + extra time, excludes penalty shootouts) — the tiebreaker is decided by the closest guess once the tournament ends.</>
+            )}
+          </p>
+        </div>
+
+        {/* Commissioner-only: who has/hasn't finished their picks */}
+        {isCommissioner && (
+          <div className="card p-0 overflow-hidden mb-8">
+            <div className="px-4 py-2 border-b border-border bg-surface/50">
+              <span className="text-gold font-bold font-mono text-sm uppercase tracking-widest">
+                Pick Completion (Commissioner)
+              </span>
             </div>
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-chalk/30 text-xs font-mono border-b border-border">
+                  <th className="text-left px-4 py-2 font-normal">Name</th>
+                  <th className="px-3 py-2 font-normal text-right">Picks</th>
+                  <th className="px-3 py-2 font-normal text-right">Tiebreaker</th>
+                  <th className="px-3 py-2 font-normal text-right">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {pickStatus.map((p) => (
+                  <tr key={p.userId} className="border-b border-border/50 last:border-0">
+                    <td className="px-4 py-2 text-chalk">{p.displayName}</td>
+                    <td className="px-3 py-2 text-right font-mono text-chalk/50">
+                      {p.picksMade}/{totalExpectedPicks}
+                    </td>
+                    <td className="px-3 py-2 text-right font-mono text-chalk/50">
+                      {p.hasTiebreaker ? "✓" : "✗"}
+                    </td>
+                    <td className="px-3 py-2 text-right">
+                      {p.complete ? (
+                        <span className="text-xs font-bold uppercase tracking-widest text-green-400 border border-green-500/40 rounded px-2 py-0.5">
+                          Complete
+                        </span>
+                      ) : (
+                        <span className="text-xs font-bold uppercase tracking-widest text-red-400 border border-red-500/40 rounded px-2 py-0.5">
+                          Incomplete
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
       </div>
