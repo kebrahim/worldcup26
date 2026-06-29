@@ -55,8 +55,12 @@ export default async function TeamsPage() {
     }
   }
 
+  // Only show users who actually drafted a team — exclude predict-only signups.
+  const draftedUserIds = new Set((allPicks ?? []).map((p) => p.user_id));
+  const draftProfiles = (profiles ?? []).filter((p) => draftedUserIds.has(p.id));
+
   // Group picks and scores by player
-  const players = (profiles ?? []).map((profile) => {
+  const players = draftProfiles.map((profile) => {
     const picks = (allPicks ?? [])
       .filter((p) => p.user_id === profile.id)
       .map((p) => ({ team_id: p.team_id, teams: extractTeam(p.teams) }));

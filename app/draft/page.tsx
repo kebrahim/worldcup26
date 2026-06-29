@@ -23,6 +23,11 @@ export default async function DraftPage() {
 
   const session = activeSession ?? completedSession;
 
+  // Only show actual draft participants (the session's snake order), not every
+  // signed-up profile — predict-only signups shouldn't appear on the draft board.
+  const draftParticipantIds = new Set(session?.snake_order ?? []);
+  const draftPlayers = (players ?? []).filter((p) => draftParticipantIds.has(p.id));
+
   const currentUserId = activeSession
     ? getPickOwner(activeSession.current_pick_index, activeSession.snake_order)
     : null;
@@ -34,7 +39,7 @@ export default async function DraftPage() {
       session={session}
       teams={teams ?? []}
       picks={picks ?? []}
-      players={players ?? []}
+      players={draftPlayers}
       currentUserId={currentUserId}
       myUserId={user?.id ?? null}
       isCommissioner={profile?.is_commissioner ?? false}

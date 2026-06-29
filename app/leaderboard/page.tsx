@@ -18,19 +18,24 @@ export default async function LeaderboardPage() {
 
   const admin = createAdminClient();
 
-  const [{ data: players }, { data: contestScores }] = await Promise.all([
+  const [{ data: players }, { data: contestScores }, { data: draftPickRows }] = await Promise.all([
     admin.from("profiles").select("id, display_name"),
     admin.from("contest_scores").select("*"),
+    admin.from("draft_picks").select("user_id"),
   ]);
 
-  const playerMap = Object.fromEntries((players ?? []).map((p) => [p.id, p.display_name]));
+  // Only show users who actually drafted a team — exclude predict-only signups.
+  const draftedUserIds = new Set((draftPickRows ?? []).map((r) => r.user_id));
+  const draftPlayers = (players ?? []).filter((p) => draftedUserIds.has(p.id));
+
+  const playerMap = Object.fromEntries(draftPlayers.map((p) => [p.id, p.display_name]));
 
   const totals: Record<string, number> = {};
   for (const cs of contestScores ?? []) {
     totals[cs.user_id] = (totals[cs.user_id] ?? 0) + (cs.contest_points ?? 0);
   }
 
-  const overall = (players ?? [])
+  const overall = draftPlayers
     .map((p) => ({ ...p, total: totals[p.id] ?? 0 }))
     .sort((a, b) => b.total - a.total);
 
