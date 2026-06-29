@@ -186,33 +186,39 @@ export default async function PredictSchedulePage() {
                       {picks.length === 0 ? (
                         <p className="text-chalk/30 text-xs">No picks for this match.</p>
                       ) : (
-                        <div className="flex flex-col gap-1.5">
-                          {picks.map((p) => {
-                            const isCorrect =
-                              match.status === "completed" &&
-                              match.winner_team_id != null &&
-                              p.team?.id === match.winner_team_id;
-                            const isWrong =
-                              match.status === "completed" &&
-                              match.winner_team_id != null &&
-                              p.team?.id !== match.winner_team_id;
-                            return (
-                              <div
-                                key={p.displayName}
-                                className={`flex items-center justify-between text-sm ${p.isMe ? "text-gold" : "text-chalk"}`}
-                              >
-                                <span>
-                                  {p.displayName}
-                                  {p.isMe && <span className="text-gold text-xs ml-1">(you)</span>}
-                                </span>
-                                <span className="flex items-center gap-2 font-mono text-xs">
-                                  {p.team?.flag_emoji} {p.team?.code ?? "—"}
-                                  {isCorrect && <span className="text-green-400">✓</span>}
-                                  {isWrong && <span className="text-red-400">✗</span>}
-                                </span>
-                              </div>
-                            );
-                          })}
+                        <div className="flex flex-col gap-3">
+                          {(() => {
+                            const byTeam = new Map<number, { team: Team; pickers: typeof picks }>();
+                            for (const p of picks) {
+                              if (!p.team) continue;
+                              if (!byTeam.has(p.team.id)) byTeam.set(p.team.id, { team: p.team, pickers: [] });
+                              byTeam.get(p.team.id)!.pickers.push(p);
+                            }
+                            const groups = Array.from(byTeam.values()).sort((a, b) => b.pickers.length - a.pickers.length);
+                            return groups.map(({ team, pickers }) => {
+                              const isCorrect = match.status === "completed" && match.winner_team_id != null && team.id === match.winner_team_id;
+                              const isWrong = match.status === "completed" && match.winner_team_id != null && team.id !== match.winner_team_id;
+                              return (
+                                <div key={team.id}>
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <span className="text-base">{team.flag_emoji}</span>
+                                    <span className="font-mono text-xs font-bold text-chalk">{team.code}</span>
+                                    <span className="text-chalk/30 text-xs">({pickers.length})</span>
+                                    {isCorrect && <span className="text-green-400 text-xs">✓</span>}
+                                    {isWrong && <span className="text-red-400 text-xs">✗</span>}
+                                  </div>
+                                  <div className="flex flex-wrap gap-x-3 gap-y-1 ml-6">
+                                    {pickers.map((p) => (
+                                      <span key={p.displayName} className={`text-sm ${p.isMe ? "text-gold" : "text-chalk/70"}`}>
+                                        {p.displayName}
+                                        {p.isMe && <span className="text-gold text-xs ml-1">(you)</span>}
+                                      </span>
+                                    ))}
+                                  </div>
+                                </div>
+                              );
+                            });
+                          })()}
                         </div>
                       )}
                     </div>
