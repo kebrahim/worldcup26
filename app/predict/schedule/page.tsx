@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import MatchTime from "@/components/MatchTime";
 
 export const revalidate = 60;
 
@@ -136,15 +137,6 @@ export default async function PredictSchedulePage() {
               const home = one(match.home);
               const away = one(match.away);
               const picks = picksByMatch[match.id] ?? [];
-              const kickoff = match.kickoff_utc
-                ? new Date(match.kickoff_utc).toLocaleString("en-US", {
-                    weekday: "short",
-                    month: "short",
-                    day: "numeric",
-                    hour: "numeric",
-                    minute: "2-digit",
-                  })
-                : "TBD";
 
               return (
                 <div key={match.id} className="card">
@@ -152,7 +144,9 @@ export default async function PredictSchedulePage() {
                     <span className="text-xs uppercase tracking-widest text-chalk/40 font-mono">
                       {STAGE_LABELS[match.stage] ?? match.stage}
                     </span>
-                    <span className="text-xs text-chalk/30 font-mono">{kickoff}</span>
+                    <span className="text-xs text-chalk/30 font-mono">
+                      {match.kickoff_utc ? <MatchTime value={match.kickoff_utc} /> : "TBD"}
+                    </span>
                   </div>
 
                   <div className="flex items-center justify-between gap-2 my-3">
