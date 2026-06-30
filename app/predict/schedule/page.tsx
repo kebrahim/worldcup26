@@ -25,6 +25,10 @@ type Match = {
   kickoff_utc: string | null;
   status: string;
   winner_team_id: number | null;
+  home_score: number | null;
+  away_score: number | null;
+  home_score_pen: number | null;
+  away_score_pen: number | null;
   home: Team | Team[] | null;
   away: Team | Team[] | null;
 };
@@ -61,7 +65,7 @@ export default async function PredictSchedulePage() {
     admin
       .from("matches")
       .select(
-        "id, stage, kickoff_utc, status, winner_team_id, home:home_team_id(id, name, code, flag_emoji), away:away_team_id(id, name, code, flag_emoji)"
+        "id, stage, kickoff_utc, status, winner_team_id, home_score, away_score, home_score_pen, away_score_pen, home:home_team_id(id, name, code, flag_emoji), away:away_team_id(id, name, code, flag_emoji)"
       )
       .neq("stage", "group")
       .order("kickoff_utc", { ascending: true }),
@@ -84,11 +88,12 @@ export default async function PredictSchedulePage() {
     profileMap[p.id] = p.display_name ?? "Anonymous";
   }
 
-  const picksByMatch: Record<number, { displayName: string; team: Team | null; isMe: boolean }[]> = {};
+  const picksByMatch: Record<number, { userId: string; displayName: string; team: Team | null; isMe: boolean }[]> = {};
   for (const p of (rawPicks ?? []) as unknown as PickRow[]) {
     const team = one(p.team);
     if (!picksByMatch[p.match_id]) picksByMatch[p.match_id] = [];
     picksByMatch[p.match_id]!.push({
+      userId: p.user_id,
       displayName: profileMap[p.user_id] ?? "Anonymous",
       team,
       isMe: p.user_id === user.id,
@@ -150,29 +155,48 @@ export default async function PredictSchedulePage() {
                   </div>
 
                   <div className="flex items-center justify-between gap-2 my-3">
-                    <div className="flex items-center gap-2 flex-1">
+                    <Link
+                      href={home ? `/country/${home.id}?hideOwner=1` : "#"}
+                      className={`flex items-center gap-2 flex-1 ${home ? "hover:text-gold transition-colors" : "pointer-events-none"} ${
+                        match.status === "completed" && match.winner_team_id === home?.id ? "text-gold" : "text-chalk"
+                      }`}
+                    >
                       <span className="text-xl">{home?.flag_emoji ?? "🏳️"}</span>
                       <div>
-                        <div className="font-bold text-sm text-chalk">{home?.code ?? "TBD"}</div>
+                        <div className="font-bold text-sm">{home?.code ?? "TBD"}</div>
                         <div className="text-xs text-chalk/30 hidden sm:block">{home?.name}</div>
                       </div>
-                    </div>
+                    </Link>
                     <div className="text-center min-w-[80px]">
                       {match.status === "completed" ? (
-                        <div className="text-chalk/40 text-xs font-mono">Final</div>
+                        <>
+                          <div className="font-mono font-bold text-chalk text-lg">
+                            {match.home_score} – {match.away_score}
+                          </div>
+                          {match.home_score_pen != null && (
+                            <div className="text-xs text-chalk/40">
+                              ({match.home_score_pen}–{match.away_score_pen} pens)
+                            </div>
+                          )}
+                        </>
                       ) : match.status === "live" ? (
                         <div className="text-gold font-bold text-sm animate-pulse">LIVE</div>
                       ) : (
                         <div className="text-chalk/20 text-xs">vs</div>
                       )}
                     </div>
-                    <div className="flex items-center gap-2 flex-1 justify-end">
+                    <Link
+                      href={away ? `/country/${away.id}?hideOwner=1` : "#"}
+                      className={`flex items-center gap-2 flex-1 justify-end ${away ? "hover:text-gold transition-colors" : "pointer-events-none"} ${
+                        match.status === "completed" && match.winner_team_id === away?.id ? "text-gold" : "text-chalk"
+                      }`}
+                    >
                       <div className="text-right">
-                        <div className="font-bold text-sm text-chalk">{away?.code ?? "TBD"}</div>
+                        <div className="font-bold text-sm">{away?.code ?? "TBD"}</div>
                         <div className="text-xs text-chalk/30 hidden sm:block">{away?.name}</div>
                       </div>
                       <span className="text-xl">{away?.flag_emoji ?? "🏳️"}</span>
-                    </div>
+                    </Link>
                   </div>
 
                   {picksRevealed && (
@@ -203,10 +227,14 @@ export default async function PredictSchedulePage() {
                                   </div>
                                   <div className="flex flex-wrap gap-x-3 gap-y-1 ml-6">
                                     {pickers.map((p) => (
-                                      <span key={p.displayName} className={`text-sm ${p.isMe ? "text-gold" : "text-chalk/70"}`}>
+                                      <Link
+                                        key={p.userId}
+                                        href={`/predict/${p.userId}`}
+                                        className={`text-sm hover:text-gold transition-colors ${p.isMe ? "text-gold" : "text-chalk/70"}`}
+                                      >
                                         {p.displayName}
                                         {p.isMe && <span className="text-gold text-xs ml-1">(you)</span>}
-                                      </span>
+                                      </Link>
                                     ))}
                                   </div>
                                 </div>

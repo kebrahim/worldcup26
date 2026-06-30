@@ -80,8 +80,20 @@ export async function syncScores(): Promise<{ error?: string; matchesUpserted?: 
 
     const groupName = match.group ? match.group.replace("GROUP_", "") : null;
 
-    const homeScore = homeId && awayId ? match.score?.fullTime?.home ?? null : null;
-    const awayScore = homeId && awayId ? match.score?.fullTime?.away ?? null : null;
+    // football-data.org's fullTime score includes penalty shootout goals for matches
+    // decided on penalties (e.g. fullTime 7-6 for a match that was 1-1 after extra
+    // time, won 6-5 on pens). regularTime + extraTime gives the true goals-scored
+    // total; penalties holds the shootout score separately.
+    const regularHome = match.score?.regularTime?.home;
+    const regularAway = match.score?.regularTime?.away;
+    const extraHome = match.score?.extraTime?.home ?? 0;
+    const extraAway = match.score?.extraTime?.away ?? 0;
+    const homeScore = homeId && awayId
+      ? (regularHome != null ? regularHome + extraHome : match.score?.fullTime?.home ?? null)
+      : null;
+    const awayScore = homeId && awayId
+      ? (regularAway != null ? regularAway + extraAway : match.score?.fullTime?.away ?? null)
+      : null;
     const homePen = homeId && awayId ? match.score?.penalties?.home ?? null : null;
     const awayPen = homeId && awayId ? match.score?.penalties?.away ?? null : null;
 

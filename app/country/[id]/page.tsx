@@ -14,8 +14,15 @@ const STAGE_LABELS: Record<string, string> = {
   final: "Final",
 };
 
-export default async function CountryPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function CountryPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ hideOwner?: string }>;
+}) {
   const { id } = await params;
+  const { hideOwner } = await searchParams;
   const teamId = parseInt(id, 10);
   if (isNaN(teamId)) notFound();
 
@@ -74,13 +81,13 @@ export default async function CountryPage({ params }: { params: Promise<{ id: st
               <span className="text-chalk/50 text-sm font-mono">{team.code}</span>
               <span className="text-chalk/30 text-sm">·</span>
               <span className="text-chalk/50 text-sm">Group {team.group_name}</span>
-              {owner && (
+              {!hideOwner && owner && (
                 <>
                   <span className="text-chalk/30 text-sm">·</span>
                   <span className="text-chalk/50 text-sm">Drafted by <span className="text-chalk font-semibold">{owner.display_name}</span></span>
                 </>
               )}
-              {!pick && (
+              {!hideOwner && !pick && (
                 <>
                   <span className="text-chalk/30 text-sm">·</span>
                   <span className="text-chalk/30 text-sm italic">Undrafted</span>
