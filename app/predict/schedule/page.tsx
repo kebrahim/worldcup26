@@ -138,17 +138,25 @@ export default async function PredictSchedulePage() {
           </div>
         ) : (
           <div className="flex flex-col gap-4">
-            {matches.map((match) => {
+            {matches.map((match, idx) => {
               const home = one(match.home);
               const away = one(match.away);
               const picks = picksByMatch[match.id] ?? [];
+              const prevMatch = matches[idx - 1];
+              const showStageDivider = idx === 0 || prevMatch?.stage !== match.stage;
 
               return (
-                <div key={match.id} className="card">
-                  <div className="flex items-center justify-between gap-2 flex-wrap mb-1">
-                    <span className="text-xs uppercase tracking-widest text-chalk/40 font-mono">
-                      {STAGE_LABELS[match.stage] ?? match.stage}
-                    </span>
+                <div key={match.id}>
+                  {showStageDivider && (
+                    <div className={`flex items-center gap-3 ${idx > 0 ? "mt-4" : ""} mb-2`}>
+                      <h2 className="text-sm font-bold uppercase tracking-widest text-gold font-display whitespace-nowrap">
+                        {STAGE_LABELS[match.stage] ?? match.stage}
+                      </h2>
+                      <div className="flex-1 h-px bg-gold/30" />
+                    </div>
+                  )}
+                <div className="card">
+                  <div className="flex items-center justify-end gap-2 flex-wrap mb-1">
                     <span className="text-xs text-chalk/30 font-mono">
                       {match.kickoff_utc ? <MatchTime value={match.kickoff_utc} /> : "TBD"}
                     </span>
@@ -245,6 +253,7 @@ export default async function PredictSchedulePage() {
                       )}
                     </div>
                   )}
+                </div>
                 </div>
               );
             })}
