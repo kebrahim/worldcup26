@@ -99,6 +99,7 @@ export default async function PredictPage() {
   // the final total as the knockout stage progresses.
   type GoalsRow = { home_score: number | null; away_score: number | null; status: string };
   const tournamentMatches = (allMatches as GoalsRow[]) ?? [];
+  const completedMatchCount = tournamentMatches.filter((m) => m.status === "completed").length;
   const actualTotalGoals = tournamentMatches
     .filter((m) => m.status === "completed")
     .reduce((sum, m) => sum + (m.home_score ?? 0) + (m.away_score ?? 0), 0);
@@ -370,7 +371,7 @@ export default async function PredictPage() {
                       </td>
                       <td className="px-3 py-2 text-right font-mono text-chalk/50 hidden sm:table-cell">
                         {afterDeadline
-                          ? `${entry.correctPicks}/${entry.totalPicks}`
+                          ? `${entry.correctPicks}/${completedMatchCount}`
                           : "—"}
                       </td>
                       <td className="px-3 py-2 text-right font-mono text-chalk/50">
