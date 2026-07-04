@@ -103,12 +103,17 @@ export default function PickClient({ matches, existingPicks, existingTiebreaker 
       winners[m.id] = computeWinner(m, effective[m.id]);
     }
     curr.forEach((m, idx) => {
-      const a = prev[idx * 2];
-      const b = prev[idx * 2 + 1];
-      effective[m.id] = {
-        home: a ? winners[a.id] ?? null : null,
-        away: b ? winners[b.id] ?? null : null,
-      };
+      if (m.home && m.away) {
+        // Real teams already known — use actual match data, not cascade
+        effective[m.id] = { home: m.home, away: m.away };
+      } else {
+        const a = prev[idx * 2];
+        const b = prev[idx * 2 + 1];
+        effective[m.id] = {
+          home: a ? winners[a.id] ?? null : null,
+          away: b ? winners[b.id] ?? null : null,
+        };
+      }
     });
   }
   // Winners of the final round (no downstream round needs these, but used for
@@ -130,12 +135,16 @@ export default function PickClient({ matches, existingPicks, existingTiebreaker 
 
   const semis = sortedRounds.semifinal;
   (sortedRounds.third_place ?? []).forEach((m, idx) => {
-    const a = semis[idx * 2];
-    const b = semis[idx * 2 + 1];
-    effective[m.id] = {
-      home: a ? computeLoser(a, effective[a.id]) : null,
-      away: b ? computeLoser(b, effective[b.id]) : null,
-    };
+    if (m.home && m.away) {
+      effective[m.id] = { home: m.home, away: m.away };
+    } else {
+      const a = semis[idx * 2];
+      const b = semis[idx * 2 + 1];
+      effective[m.id] = {
+        home: a ? computeLoser(a, effective[a.id]) : null,
+        away: b ? computeLoser(b, effective[b.id]) : null,
+      };
+    }
   });
 
   // Only picks that are still consistent with the current bracket state get saved.
