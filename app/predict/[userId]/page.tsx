@@ -259,13 +259,21 @@ export default async function UserBracketPage({
                           ? away
                           : teamMap[predictedId] ?? null;
 
+                      // The predicted team didn't advance to this match slot (stale pick)
+                      const isStale =
+                        predictedTeam !== null &&
+                        home !== null &&
+                        away !== null &&
+                        predictedTeam.id !== home.id &&
+                        predictedTeam.id !== away.id;
+
                       return (
                         <div
                           key={pick.match_id}
                           className={`card py-3 ${
                             result === "correct"
                               ? "border-l-2 border-l-green-500"
-                              : result === "wrong"
+                              : result === "wrong" || isStale
                               ? "border-l-2 border-l-red-500"
                               : "border-l-2 border-l-border"
                           }`}
@@ -337,13 +345,21 @@ export default async function UserBracketPage({
 
                           {/* Prediction note */}
                           <div className="mt-1 px-1 flex items-center gap-2">
-                            <p className="text-xs text-chalk/30">
-                              Pick:{" "}
-                              <span className="text-gold/70">
-                                {predictedTeam?.flag_emoji ?? ""}{" "}
-                                {predictedTeam?.code ?? "Unknown"}
-                              </span>
-                            </p>
+                            {isStale ? (
+                              <p className="text-xs text-red-400/60">
+                                Pick: {predictedTeam?.flag_emoji ?? ""}{" "}
+                                {predictedTeam?.code ?? "Unknown"}{" "}
+                                <span className="text-chalk/30">(didn&apos;t advance to this match)</span>
+                              </p>
+                            ) : (
+                              <p className="text-xs text-chalk/30">
+                                Pick:{" "}
+                                <span className="text-gold/70">
+                                  {predictedTeam?.flag_emoji ?? ""}{" "}
+                                  {predictedTeam?.code ?? "Unknown"}
+                                </span>
+                              </p>
+                            )}
                             {result === "correct" && (
                               <span className="text-xs text-green-400">
                                 +{ROUND_POINTS[match?.stage ?? ""] ?? 0} pts

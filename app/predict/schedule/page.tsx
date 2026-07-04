@@ -217,6 +217,8 @@ export default async function PredictSchedulePage() {
                             const byTeam = new Map<number, { team: Team; pickers: typeof picks }>();
                             for (const p of picks) {
                               if (!p.team) continue;
+                              // Skip stale picks where the predicted team didn't advance to this match
+                              if (home && away && p.team.id !== home.id && p.team.id !== away.id) continue;
                               if (!byTeam.has(p.team.id)) byTeam.set(p.team.id, { team: p.team, pickers: [] });
                               byTeam.get(p.team.id)!.pickers.push(p);
                             }
