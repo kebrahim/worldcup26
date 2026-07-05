@@ -42,6 +42,7 @@ type LeaderboardEntry = {
   totalPicks: number;
   tiebreakerGuess: number | null;
   championPick: Team | null;
+  roundPoints: Record<string, number>;
 };
 
 export default async function PredictPage() {
@@ -119,12 +120,12 @@ export default async function PredictPage() {
 
   const scoresByUser: Record<
     string,
-    { score: number; correct: number; total: number }
+    { score: number; correct: number; total: number; roundPoints: Record<string, number> }
   > = {};
   const championByUser: Record<string, Team> = {};
   for (const pick of (picks as unknown as BracketPick[]) ?? []) {
     if (!scoresByUser[pick.user_id]) {
-      scoresByUser[pick.user_id] = { score: 0, correct: 0, total: 0 };
+      scoresByUser[pick.user_id] = { score: 0, correct: 0, total: 0, roundPoints: {} };
     }
     const entry = scoresByUser[pick.user_id]!;
     const match = Array.isArray(pick.match) ? pick.match[0] : pick.match;
@@ -135,6 +136,7 @@ export default async function PredictPage() {
         const pts = ROUND_POINTS[match.stage] ?? 1;
         entry.score += pts;
         entry.correct++;
+        entry.roundPoints[match.stage] = (entry.roundPoints[match.stage] ?? 0) + pts;
       }
     }
     if (match.stage === "final") {
@@ -158,6 +160,7 @@ export default async function PredictPage() {
       totalPicks: scoresByUser[uid]?.total ?? 0,
       tiebreakerGuess: tiebreakerMap[uid] ?? null,
       championPick: championByUser[uid] ?? null,
+      roundPoints: scoresByUser[uid]?.roundPoints ?? {},
     })
   );
 
@@ -318,17 +321,24 @@ export default async function PredictPage() {
                 Leaderboard
               </span>
             </div>
+            <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-chalk/30 text-xs font-mono border-b border-border">
                   <th className="text-left px-4 py-2 font-normal">Rank</th>
                   <th className="text-left px-4 py-2 font-normal">Name</th>
-                  <th className="px-3 py-2 font-normal text-right">Score</th>
+                  <th className="px-3 py-2 font-normal text-right font-bold">Total</th>
+                  <th className="px-3 py-2 font-normal text-right hidden md:table-cell">R32</th>
+                  <th className="px-3 py-2 font-normal text-right hidden md:table-cell">R16</th>
+                  <th className="px-3 py-2 font-normal text-right hidden md:table-cell">QF</th>
+                  <th className="px-3 py-2 font-normal text-right hidden md:table-cell">SF</th>
+                  <th className="px-3 py-2 font-normal text-right hidden md:table-cell">3rd</th>
+                  <th className="px-3 py-2 font-normal text-right hidden md:table-cell">F</th>
                   <th className="px-3 py-2 font-normal text-right hidden sm:table-cell">
                     Correct
                   </th>
                   <th className="px-3 py-2 font-normal text-right">
-                    Champion Pick
+                    Champion
                   </th>
                   <th className="px-3 py-2 font-normal text-right hidden sm:table-cell">
                     Tiebreaker
@@ -338,6 +348,8 @@ export default async function PredictPage() {
               <tbody>
                 {leaderboard.map((entry, i) => {
                   const isMe = user?.id === entry.userId;
+                  const rnd = (stage: string) =>
+                    afterDeadline ? (entry.roundPoints[stage] ?? 0) || "·" : "—";
                   return (
                     <tr
                       key={entry.userId}
@@ -369,6 +381,12 @@ export default async function PredictPage() {
                       <td className="px-3 py-2 text-right font-mono font-bold text-chalk">
                         {afterDeadline ? entry.score : "—"}
                       </td>
+                      <td className="px-3 py-2 text-right font-mono text-chalk/50 hidden md:table-cell">{rnd("round_of_32")}</td>
+                      <td className="px-3 py-2 text-right font-mono text-chalk/50 hidden md:table-cell">{rnd("round_of_16")}</td>
+                      <td className="px-3 py-2 text-right font-mono text-chalk/50 hidden md:table-cell">{rnd("quarterfinal")}</td>
+                      <td className="px-3 py-2 text-right font-mono text-chalk/50 hidden md:table-cell">{rnd("semifinal")}</td>
+                      <td className="px-3 py-2 text-right font-mono text-chalk/50 hidden md:table-cell">{rnd("third_place")}</td>
+                      <td className="px-3 py-2 text-right font-mono text-chalk/50 hidden md:table-cell">{rnd("final")}</td>
                       <td className="px-3 py-2 text-right font-mono text-chalk/50 hidden sm:table-cell">
                         {afterDeadline
                           ? `${entry.correctPicks}/${completedMatchCount}`
@@ -391,6 +409,7 @@ export default async function PredictPage() {
                 })}
               </tbody>
             </table>
+            </div>
           </div>
         )}
 
