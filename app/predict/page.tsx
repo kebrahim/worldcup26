@@ -316,9 +316,12 @@ export default async function PredictPage() {
           </div>
         ) : (
           <div className="card p-0 overflow-hidden mb-8">
-            <div className="px-4 py-2 border-b border-border bg-surface/50">
+            <div className="px-4 py-2 border-b border-border bg-surface/50 flex flex-wrap items-center justify-between gap-2">
               <span className="text-gold font-bold font-mono text-sm uppercase tracking-widest">
                 Leaderboard
+              </span>
+              <span className="text-chalk/30 text-xs font-mono">
+                Points per correct pick — R32: 1 · R16: 2 · QF: 4 · SF: 8 · 3rd: 1 · F: 16
               </span>
             </div>
             <div className="overflow-x-auto">
